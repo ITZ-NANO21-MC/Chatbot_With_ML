@@ -1,0 +1,29 @@
+{
+  "conocimiento": [
+    {
+      "pregunta_base": "hola",
+      "respuesta": "¡Hola! Soy tu bot asistente.",
+      "sinonimos": ["saludos", "buenas", "qué tal"]
+    },
+    {
+      "pregunta_base": "cómo estás",
+      "respuesta": "Estoy funcionando bien, gracias.",
+      "sinonimos": ["qué tal estás", "cómo te encuentras"]
+    },
+    {
+      "pregunta_base": "qué puedes hacer",
+      "respuesta": "Puedo responder preguntas simples. Por ahora entiendo: hola, cómo estás, qué puedes hacer, cuál es tu nombre, adiós.",
+      "sinonimos": ["qué sabes hacer", "para qué sirves"]
+    },
+    {
+      "pregunta_base": "cuál es tu nombre",
+      "respuesta": "Soy BotML, tu asistente con scikit-learn.",
+      "sinonimos": ["cómo te llamas", "quién eres"]
+    },
+    {
+      "pregunta_base": "adiós",
+      "respuesta": "¡Hasta luego! Fue un gusto ayudarte.",
+      "sinonimos": ["hasta luego", "chao", "nos vemos"]
+    }
+  ]
+}

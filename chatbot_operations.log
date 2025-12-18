@@ -1,0 +1,40 @@
+2025-12-16 23:38:31,618 - INFO - Inicializando ChatbotMLMejorado...
+2025-12-16 23:38:31,619 - INFO - Datos expandidos: 5 -> 17 preguntas
+2025-12-16 23:38:31,658 - INFO - Vectorizador entrenado exitosamente
+2025-12-16 23:38:31,659 - INFO - === Nueva consulta: 'hola' ===
+2025-12-16 23:38:31,661 - INFO - TF-IDF: 'hola' -> confianza: 1.00
+2025-12-16 23:38:31,662 - INFO - Respondiendo vía TF-IDF (confianza: 1.00)
+2025-12-16 23:38:31,662 - INFO - === Nueva consulta: 'buenas' ===
+2025-12-16 23:38:31,664 - INFO - TF-IDF: 'buenas' -> confianza: 1.00
+2025-12-16 23:38:31,665 - INFO - Respondiendo vía TF-IDF (confianza: 1.00)
+2025-12-16 23:38:31,666 - INFO - === Nueva consulta: 'qé tal' ===
+2025-12-16 23:38:31,668 - INFO - TF-IDF: 'qé tal' -> confianza: 0.80
+2025-12-16 23:38:31,669 - INFO - Respondiendo vía TF-IDF (confianza: 0.80)
+2025-12-16 23:38:31,669 - INFO - === Nueva consulta: 'cómo te llamas' ===
+2025-12-16 23:38:31,674 - INFO - TF-IDF: 'cómo te llamas' -> confianza: 1.00
+2025-12-16 23:38:31,675 - INFO - Respondiendo vía TF-IDF (confianza: 1.00)
+2025-12-16 23:38:31,675 - INFO - === Nueva consulta: 'adios' ===
+2025-12-16 23:38:31,677 - WARNING - TF-IDF: confianza baja (0.00) para: 'adios'
+2025-12-16 23:38:31,679 - INFO - Fuzzy: 'adios' -> coincide con 'adiós' (80.0/100)
+2025-12-16 23:38:31,679 - INFO - Respondiendo vía Fuzzy Matching (red de seguridad)
+2025-12-16 23:38:31,679 - INFO - === Nueva consulta: 'algo aleatorio' ===
+2025-12-16 23:38:31,681 - WARNING - TF-IDF: confianza baja (0.00) para: 'algo aleatorio'
+2025-12-16 23:38:31,682 - INFO - Fuzzy: sin coincidencia sólida para 'algo aleatorio' (32.25806451612904/100)
+2025-12-16 23:38:31,682 - WARNING - Sin respuesta adecuada para: 'algo aleatorio'
+2025-12-17 00:11:52,232 - __main__ - INFO - Iniciando la aplicación del chatbot...
+2025-12-17 00:11:52,244 - app.chatbot.engine - INFO - Inicializando ChatbotEngine...
+2025-12-17 00:11:52,244 - app.chatbot.engine - INFO - Cargando base de conocimiento desde: app/data/knowledge_base.json
+2025-12-17 00:11:52,260 - app.chatbot.engine - INFO - Datos expandidos: 5 -> 17 preguntas
+2025-12-17 00:11:52,260 - app.chatbot.engine - INFO - Entrenando el vectorizador TF-IDF...
+2025-12-17 00:11:52,264 - app.chatbot.engine - INFO - Vectorizador entrenado exitosamente.
+2025-12-17 00:11:52,265 - app.chatbot.engine - INFO - Motor del chatbot inicializado exitosamente.
+2025-12-17 00:12:02,228 - whatsapp-chatbot-python - INFO - Deleted old incoming notifications.
+2025-12-17 00:12:02,229 - __main__ - INFO - Bot iniciado. Escuchando mensajes...
+2025-12-17 00:12:02,229 - whatsapp-chatbot-python - INFO - Started receiving incoming notifications.
+2025-12-17 00:13:30,901 - app.chatbot.engine - INFO - === Nueva consulta: 'Hola' ===
+2025-12-17 00:13:30,904 - app.chatbot.engine - INFO - TF-IDF: 'Hola' -> confianza: 1.00
+2025-12-17 00:13:30,904 - app.chatbot.engine - INFO - Respondiendo vía TF-IDF (confianza: 1.00)
+2025-12-17 00:13:43,982 - app.chatbot.engine - INFO - === Nueva consulta: 'Quien eres' ===
+2025-12-17 00:13:43,984 - app.chatbot.engine - INFO - TF-IDF: 'Quien eres' -> confianza: 0.71
+2025-12-17 00:13:43,985 - app.chatbot.engine - INFO - Respondiendo vía TF-IDF (confianza: 0.71)
+2025-12-17 00:15:00,782 - whatsapp-chatbot-python - INFO - Stopped receiving incoming notifications.
