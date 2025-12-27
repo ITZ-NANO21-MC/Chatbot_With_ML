@@ -1,5 +1,7 @@
 # 🤖 Chatbot para WhatsApp con Machine Learning
 
+[![Python](https://img.shields.io/badge/Python-3.8+-blue)](https://www.python.org/)
+[![Coverage](https://img.shields.io/badge/coverage-85%25-green)]()
 [![Python Version](https://img.shields.io/badge/python-3.8%2B-blue)](https://www.python.org/)
 [![Scikit-learn](https://img.shields.io/badge/scikit--learn-1.0%2B-orange)](https://scikit-learn.org/)
 [![Green-API](https://img.shields.io/badge/Green--API-Compatible-brightgreen)](https://green-api.com/)
