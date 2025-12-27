@@ -1,10 +1,9 @@
 # 🤖 Chatbot para WhatsApp con Machine Learning
 
-[![Python](https://img.shields.io/badge/Python-3.8+-blue)](https://www.python.org/)
-[![Coverage](https://img.shields.io/badge/coverage-85%25-green)]()
 [![Python Version](https://img.shields.io/badge/python-3.8%2B-blue)](https://www.python.org/)
 [![Scikit-learn](https://img.shields.io/badge/scikit--learn-1.0%2B-orange)](https://scikit-learn.org/)
 [![Green-API](https://img.shields.io/badge/Green--API-Compatible-brightgreen)](https://green-api.com/)
+[![Coverage](https://img.shields.io/badge/coverage-85%25-green)]()
 [![License](https://img.shields.io/badge/license-MIT-lightgrey)](LICENSE)
 
 Un chatbot inteligente para WhatsApp que utiliza **Machine Learning** (scikit-learn) para comprender el lenguaje natural y responder consultas de forma contextual. Diseñado con una arquitectura modular profesional, fácil de extender y desplegar.
