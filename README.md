@@ -133,7 +133,8 @@ Esto descubrirá y ejecutará automáticamente todas las pruebas en el directori
 ## 📁 Estructura del Proyecto
 
 ```
-chatbot-whatsapp-ml/
+
+Chatbot_With_ML/
 ├── 📁 app/
 │   ├── 📁 api/
 │   │   ├── __init__.py
