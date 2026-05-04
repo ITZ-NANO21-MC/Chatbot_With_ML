@@ -1,6 +1,9 @@
 # Ignorar archivo de variables de entorno
 .env
 
+# Ignorar logs
+*.log
+
 # Ignorar directorio de entorno virtual
 env/
 
