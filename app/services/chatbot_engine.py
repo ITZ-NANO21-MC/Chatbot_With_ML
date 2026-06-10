@@ -6,13 +6,15 @@ de Lenguaje Natural (PLN) para comprender y responder a las preguntas
 de los usuarios.
 """
 import json
-import logging
 from typing import Optional, Tuple
 
 import numpy as np
 from rapidfuzz import fuzz, process
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
+
+from app.utils.logger import get_logger
+from app import config
 
 
 class ChatbotEngine:
@@ -31,7 +33,7 @@ class ChatbotEngine:
             knowledge_base_path (str): Ruta al archivo JSON de la base de
                                        conocimiento.
         """
-        self.logger = logging.getLogger(__name__)
+        self.logger = get_logger(__name__)
         self.logger.info("Inicializando ChatbotEngine...")
 
         try:
@@ -107,7 +109,7 @@ class ChatbotEngine:
             max_idx = np.argmax(similitudes)
             confianza = similitudes[0, max_idx]
 
-            if confianza > 0.3:  # Umbral de confianza
+            if confianza > config.TFIDF_CONFIDENCE_THRESHOLD:
                 self.logger.info(f"TF-IDF: '{pregunta}' -> confianza: {confianza:.2f}")
                 return self.respuestas_expandidas[max_idx], confianza
             else:
@@ -139,7 +141,7 @@ class ChatbotEngine:
                 scorer=fuzz.token_sort_ratio
             )
 
-            if puntuacion >= 70:  # Umbral de similitud fuzzy
+            if puntuacion >= config.FUZZY_SCORE_THRESHOLD:
                 self.logger.info(f"Fuzzy: '{pregunta}' -> coincide con '{mejor_coincidencia}' ({puntuacion}/100)")
                 return self.respuestas_base[idx]
             else:

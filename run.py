@@ -3,35 +3,34 @@
 
 Este script es el responsable de lanzar el chatbot. Orquesta la
 inicialización de todos los componentes de la aplicación:
-1. Configura el logging.
-2. Carga la configuración y las credenciales.
+1. Inicializa el logging centralizado.
+2. Carga la configuración y valida las credenciales.
 3. Inicializa el motor del chatbot (ChatbotEngine).
 4. Inicializa el bot de la API de WhatsApp (GreenAPIBot).
 5. Registra los manejadores de mensajes.
 6. Inicia el bot para que escuche eventos de forma continua.
 """
-import logging
-
 from whatsapp_chatbot_python import GreenAPIBot
 
 from app import config
-from app.api.routes import register_handlers
-from app.chatbot.engine import ChatbotEngine
+from app.utils.logger import get_logger
+from app.handlers.message_handler import register_handlers
+from app.services.chatbot_engine import ChatbotEngine
+
+logger = get_logger(__name__)
 
 
 def main():
     """Función principal que configura y ejecuta el chatbot."""
-    # 1. Configuración del logging
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        handlers=[
-            logging.FileHandler(config.LOG_FILE_PATH),
-            logging.StreamHandler()
-        ]
-    )
-    logger = logging.getLogger(__name__)
     logger.info("Iniciando la aplicación del chatbot...")
+
+    # 1. Validación de credenciales
+    if not config.validate_credentials():
+        logger.critical(
+            "Las credenciales de Green-API no están configuradas. "
+            "Revisa tu archivo .env con ID_INSTANCE y API_TOKEN_INSTANCE."
+        )
+        return
 
     try:
         # 2. Inicialización del motor del chatbot

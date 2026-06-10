@@ -3,20 +3,46 @@
 
 Este archivo centraliza las configuraciones y credenciales
 necesarias para la aplicación del chatbot.
-Carga las variables de entorno desde un archivo .env.
+Carga las variables de entorno desde un archivo .env y valida
+que las credenciales críticas estén presentes.
 """
 import os
 from dotenv import load_dotenv
 
 # Carga las variables de entorno desde el archivo .env
-# Se asume que el archivo .env se encuentra en el directorio raíz del proyecto (Chatbot_wha)
-dotenv_path = os.path.join(os.path.dirname(__file__), '..', '..', '.env')
+# Se busca el .env en el directorio raíz del proyecto
+_project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+dotenv_path = os.path.join(_project_root, '.env')
 load_dotenv(dotenv_path=dotenv_path)
 
 # --- CREDENCIALES DE GREEN-API ---
-ID_INSTANCE: str = os.getenv("ID_INSTANCE")
-API_TOKEN_INSTANCE: str = os.getenv("API_TOKEN_INSTANCE")
+ID_INSTANCE: str = os.getenv("ID_INSTANCE", "")
+API_TOKEN_INSTANCE: str = os.getenv("API_TOKEN_INSTANCE", "")
 
 # --- CONFIGURACIÓN DEL CHATBOT ---
-KNOWLEDGE_BASE_PATH: str = os.getenv("KNOWLEDGE_BASE_PATH", "app/data/knowledge_base.json")
-LOG_FILE_PATH: str = os.getenv("LOG_FILE_PATH", "chatbot_operations.log")
+KNOWLEDGE_BASE_PATH: str = os.getenv(
+    "KNOWLEDGE_BASE_PATH",
+    os.path.join(_project_root, "app", "data", "knowledge_base.json")
+)
+LOG_FILE_PATH: str = os.getenv(
+    "LOG_FILE_PATH",
+    os.path.join(_project_root, "chatbot_operations.log")
+)
+
+# --- UMBRALES DE CONFIANZA (configurables) ---
+TFIDF_CONFIDENCE_THRESHOLD: float = float(os.getenv("TFIDF_THRESHOLD", "0.3"))
+FUZZY_SCORE_THRESHOLD: int = int(os.getenv("FUZZY_THRESHOLD", "70"))
+
+# --- CONFIGURACIONES FUTURAS (reservadas) ---
+GOOGLE_SHEETS_URL: str = os.getenv("GOOGLE_SHEETS_URL", "")
+
+
+def validate_credentials() -> bool:
+    """Valida que las credenciales de Green-API estén configuradas.
+
+    Returns:
+        bool: True si las credenciales están presentes, False si no.
+    """
+    if not ID_INSTANCE or not API_TOKEN_INSTANCE:
+        return False
+    return True
