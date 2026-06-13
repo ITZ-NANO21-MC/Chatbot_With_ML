@@ -8,6 +8,7 @@ de los mensajes de texto plano que se envían al motor de IA.
 from whatsapp_chatbot_python import GreenAPIBot, Notification
 
 from app.services.chatbot_engine import ChatbotEngine
+from app.services import state_manager
 from app.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -23,8 +24,11 @@ COMMAND_HORARIO = "/horario"
 # --- Respuestas de Comandos ---
 WELCOME_MESSAGE = (
     "👋 ¡Hola! Soy tu asistente virtual.\n\n"
-    "Puedo ayudarte con consultas frecuentes.\n"
-    "Escribe tu pregunta o usa /ayuda para ver las opciones disponibles."
+    "Por favor, elige una opción enviando el número correspondiente:\n"
+    "1️⃣ Consultar stock\n"
+    "2️⃣ Consultar precios\n"
+    "3️⃣ Información de contacto y horario\n"
+    "4️⃣ Hablar con el asistente inteligente (IA)"
 )
 
 STOCK_MESSAGE = "📦 Consultas de stock: ¡Próximamente estará integrado con nuestro inventario!"
@@ -84,13 +88,37 @@ def register_handlers(bot: GreenAPIBot, engine: ChatbotEngine):
         if not user_message:
             return
 
+        user_id = notification.sender
+        if not user_id:
+            user_id = "unknown"
+
         # --- Procesamiento de Comandos ---
         command = user_message.strip().lower()
 
-        if command == COMMAND_START:
-            logger.info("Comando /start recibido.")
+        if command in [COMMAND_START, "hola", "menu", "menú"]:
+            logger.info(f"Mostrando menú principal a {user_id}")
+            state_manager.set_state(user_id, state_manager.STATE_MENU_PRINCIPAL)
             notification.answer(WELCOME_MESSAGE)
             return
+
+        current_state = state_manager.get_state(user_id)
+        if current_state == state_manager.STATE_MENU_PRINCIPAL:
+            if command == "1":
+                notification.answer(STOCK_MESSAGE)
+                return
+            elif command == "2":
+                notification.answer(PRECIO_MESSAGE)
+                return
+            elif command == "3":
+                notification.answer(f"{CONTACTO_MESSAGE}\n\n{HORARIO_MESSAGE}")
+                return
+            elif command == "4":
+                state_manager.clear_state(user_id)
+                notification.answer("Modo IA activado 🤖. Escribe tu pregunta libremente:")
+                return
+            else:
+                notification.answer("⚠️ Opción no válida. Por favor, envía 1, 2, 3 o 4.")
+                return
 
         if command == COMMAND_HELP:
             logger.info("Comando /ayuda recibido.")
