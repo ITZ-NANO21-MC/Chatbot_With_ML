@@ -15,6 +15,10 @@ logger = get_logger(__name__)
 # --- Constantes de Comandos ---
 COMMAND_START = "/start"
 COMMAND_HELP = "/ayuda"
+COMMAND_STOCK = "/stock"
+COMMAND_PRECIO = "/precio"
+COMMAND_CONTACTO = "/contacto"
+COMMAND_HORARIO = "/horario"
 
 # --- Respuestas de Comandos ---
 WELCOME_MESSAGE = (
@@ -23,10 +27,30 @@ WELCOME_MESSAGE = (
     "Escribe tu pregunta o usa /ayuda para ver las opciones disponibles."
 )
 
+STOCK_MESSAGE = "📦 Consultas de stock: ¡Próximamente estará integrado con nuestro inventario!"
+
+PRECIO_MESSAGE = "💰 Consultas de precios: ¡Próximamente podrás consultar precios actualizados!"
+
+CONTACTO_MESSAGE = (
+    "📞 *Contacto*\n"
+    "Teléfono: +58 412-1234567\n"
+    "Email: contacto@empresa.com"
+)
+
+HORARIO_MESSAGE = (
+    "🕒 *Horario de Atención*\n"
+    "Lunes a Viernes: 9:00 AM - 5:00 PM\n"
+    "Sábado: 10:00 AM - 2:00 PM"
+)
+
 HELP_MESSAGE = (
     "📋 *Comandos disponibles:*\n\n"
     "/start - Mensaje de bienvenida\n"
-    "/ayuda - Ver este menú de ayuda\n\n"
+    "/ayuda - Ver este menú de ayuda\n"
+    "/stock - Consultar disponibilidad de productos\n"
+    "/precio - Consultar precios\n"
+    "/contacto - Ver información de contacto\n"
+    "/horario - Ver horario de atención\n\n"
     "También puedes escribirme cualquier pregunta y haré mi mejor esfuerzo "
     "para responderte. 🤖"
 )
@@ -71,6 +95,26 @@ def register_handlers(bot: GreenAPIBot, engine: ChatbotEngine):
         if command == COMMAND_HELP:
             logger.info("Comando /ayuda recibido.")
             notification.answer(HELP_MESSAGE)
+            return
+
+        if command == COMMAND_STOCK:
+            logger.info("Comando /stock recibido.")
+            notification.answer(STOCK_MESSAGE)
+            return
+
+        if command == COMMAND_PRECIO:
+            logger.info("Comando /precio recibido.")
+            notification.answer(PRECIO_MESSAGE)
+            return
+
+        if command == COMMAND_CONTACTO:
+            logger.info("Comando /contacto recibido.")
+            notification.answer(CONTACTO_MESSAGE)
+            return
+
+        if command == COMMAND_HORARIO:
+            logger.info("Comando /horario recibido.")
+            notification.answer(HORARIO_MESSAGE)
             return
 
         # --- Procesamiento de Texto Plano (Motor de IA) ---
