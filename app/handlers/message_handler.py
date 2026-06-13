@@ -8,7 +8,7 @@ de los mensajes de texto plano que se envían al motor de IA.
 from whatsapp_chatbot_python import GreenAPIBot, Notification
 
 from app.services.chatbot_engine import ChatbotEngine
-from app.services import state_manager
+from app.services import state_manager, inventory_service
 from app.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -104,10 +104,12 @@ def register_handlers(bot: GreenAPIBot, engine: ChatbotEngine):
         current_state = state_manager.get_state(user_id)
         if current_state == state_manager.STATE_MENU_PRINCIPAL:
             if command == "1":
-                notification.answer(STOCK_MESSAGE)
+                state_manager.set_state(user_id, state_manager.STATE_ESPERANDO_PRODUCTO_STOCK)
+                notification.answer("📦 Por favor, escribe el nombre del producto para consultar su stock:")
                 return
             elif command == "2":
-                notification.answer(PRECIO_MESSAGE)
+                state_manager.set_state(user_id, state_manager.STATE_ESPERANDO_PRODUCTO_PRECIO)
+                notification.answer("💰 Por favor, escribe el nombre del producto para consultar su precio:")
                 return
             elif command == "3":
                 notification.answer(f"{CONTACTO_MESSAGE}\n\n{HORARIO_MESSAGE}")
@@ -119,6 +121,30 @@ def register_handlers(bot: GreenAPIBot, engine: ChatbotEngine):
             else:
                 notification.answer("⚠️ Opción no válida. Por favor, envía 1, 2, 3 o 4.")
                 return
+
+        if current_state in [state_manager.STATE_ESPERANDO_PRODUCTO_STOCK, state_manager.STATE_ESPERANDO_PRODUCTO_PRECIO]:
+            producto_info = inventory_service.buscar_producto(user_message)
+            state_manager.set_state(user_id, state_manager.STATE_MENU_PRINCIPAL)
+            
+            if not producto_info:
+                notification.answer(
+                    f"❌ No encontré ningún producto que coincida con '{user_message}'.\n\n" + WELCOME_MESSAGE
+                )
+                return
+                
+            if current_state == state_manager.STATE_ESPERANDO_PRODUCTO_STOCK:
+                notification.answer(
+                    f"📦 *Stock disponible*\n"
+                    f"Producto: {producto_info['nombre']}\n"
+                    f"Cantidad: {producto_info['stock']} unidades\n\n" + WELCOME_MESSAGE
+                )
+            else:
+                notification.answer(
+                    f"💰 *Precio*\n"
+                    f"Producto: {producto_info['nombre']}\n"
+                    f"Precio: ${producto_info['precio']:.2f}\n\n" + WELCOME_MESSAGE
+                )
+            return
 
         if command == COMMAND_HELP:
             logger.info("Comando /ayuda recibido.")

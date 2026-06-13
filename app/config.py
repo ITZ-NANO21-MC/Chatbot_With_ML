@@ -33,8 +33,17 @@ LOG_FILE_PATH: str = os.getenv(
 TFIDF_CONFIDENCE_THRESHOLD: float = float(os.getenv("TFIDF_THRESHOLD", "0.3"))
 FUZZY_SCORE_THRESHOLD: int = int(os.getenv("FUZZY_THRESHOLD", "70"))
 
-# --- CONFIGURACIONES FUTURAS (reservadas) ---
-GOOGLE_SHEETS_URL: str = os.getenv("GOOGLE_SHEETS_URL", "")
+# --- CONFIGURACIÓN DE INVENTARIO (Fase 4) ---
+# Tipos soportados: 'sqlite' o 'csv'
+INVENTORY_SOURCE_TYPE: str = os.getenv("INVENTORY_SOURCE_TYPE", "sqlite")
+INVENTORY_SQLITE_PATH: str = os.getenv(
+    "INVENTORY_SQLITE_PATH",
+    os.path.join(_project_root, "app", "data", "inventory.db")
+)
+INVENTORY_CSV_PATH: str = os.getenv(
+    "INVENTORY_CSV_PATH",
+    os.path.join(_project_root, "app", "data", "inventory.csv")
+)
 
 
 def validate_credentials() -> bool:
