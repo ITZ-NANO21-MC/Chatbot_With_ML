@@ -10,3 +10,10 @@ env/
 # Ignorar archivos de caché de Python
 __pycache__/
 *.pyc
+
+# Ignorar documentación generada y notas
+AGENTS.md
+Upgrade_sistema_inventario_chatbot.md
+tareas_opencode.md
+PLAN_MONETIZACION.md
+instrucciones_gemini.md

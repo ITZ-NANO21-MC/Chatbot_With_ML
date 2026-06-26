@@ -41,9 +41,11 @@ def main():
             id_instance=config.ID_INSTANCE,
             api_token_instance=config.API_TOKEN_INSTANCE
         )
+        logger.info("GreenAPIBot creado exitosamente.")
 
         # 4. Registro de los manejadores de eventos
         register_handlers(bot, engine)
+        logger.info("Handlers registrados exitosamente.")
 
         # 5. Inicio del bot
         logger.info("Bot iniciado. Escuchando mensajes...")

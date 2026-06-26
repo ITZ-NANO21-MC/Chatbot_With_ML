@@ -83,94 +83,105 @@ def register_handlers(bot: GreenAPIBot, engine: ChatbotEngine):
             notification (Notification): El objeto de notificación de la API
                                          que contiene el mensaje y metadatos.
         """
-        user_message = notification.message_text
+        try:
+            user_message = notification.message_text
+            logger.debug(f"Notificación recibida. message_text='{user_message}', sender='{notification.sender}'")
 
-        if not user_message:
-            return
-
-        user_id = notification.sender
-        if not user_id:
-            user_id = "unknown"
-
-        # --- Procesamiento de Comandos ---
-        command = user_message.strip().lower()
-
-        if command in [COMMAND_START, "hola", "menu", "menú"]:
-            logger.info(f"Mostrando menú principal a {user_id}")
-            state_manager.set_state(user_id, state_manager.STATE_MENU_PRINCIPAL)
-            notification.answer(WELCOME_MESSAGE)
-            return
-
-        current_state = state_manager.get_state(user_id)
-        if current_state == state_manager.STATE_MENU_PRINCIPAL:
-            if command == "1":
-                state_manager.set_state(user_id, state_manager.STATE_ESPERANDO_PRODUCTO_STOCK)
-                notification.answer("📦 Por favor, escribe el nombre del producto para consultar su stock:")
-                return
-            elif command == "2":
-                state_manager.set_state(user_id, state_manager.STATE_ESPERANDO_PRODUCTO_PRECIO)
-                notification.answer("💰 Por favor, escribe el nombre del producto para consultar su precio:")
-                return
-            elif command == "3":
-                notification.answer(f"{CONTACTO_MESSAGE}\n\n{HORARIO_MESSAGE}")
-                return
-            elif command == "4":
-                state_manager.clear_state(user_id)
-                notification.answer("Modo IA activado 🤖. Escribe tu pregunta libremente:")
-                return
-            else:
-                notification.answer("⚠️ Opción no válida. Por favor, envía 1, 2, 3 o 4.")
+            if not user_message:
+                logger.warning(f"Mensaje vacío o None recibido de {notification.sender}. Se ignora la notificación.")
                 return
 
-        if current_state in [state_manager.STATE_ESPERANDO_PRODUCTO_STOCK, state_manager.STATE_ESPERANDO_PRODUCTO_PRECIO]:
-            producto_info = inventory_service.buscar_producto(user_message)
-            state_manager.set_state(user_id, state_manager.STATE_MENU_PRINCIPAL)
-            
-            if not producto_info:
-                notification.answer(
-                    f"❌ No encontré ningún producto que coincida con '{user_message}'.\n\n" + WELCOME_MESSAGE
-                )
+            user_id = notification.sender
+            if not user_id:
+                user_id = "unknown"
+
+            # --- Procesamiento de Comandos ---
+            command = user_message.strip().lower()
+
+            if command in [COMMAND_START, "hola", "menu", "menú"]:
+                logger.info(f"Mostrando menú principal a {user_id}")
+                state_manager.set_state(user_id, state_manager.STATE_MENU_PRINCIPAL)
+                notification.answer(WELCOME_MESSAGE)
                 return
+
+            current_state = state_manager.get_state(user_id)
+            if current_state == state_manager.STATE_MENU_PRINCIPAL:
+                if command == "1":
+                    state_manager.set_state(user_id, state_manager.STATE_ESPERANDO_PRODUCTO_STOCK)
+                    notification.answer("📦 Por favor, escribe el nombre del producto para consultar su stock:")
+                    return
+                elif command == "2":
+                    state_manager.set_state(user_id, state_manager.STATE_ESPERANDO_PRODUCTO_PRECIO)
+                    notification.answer("💰 Por favor, escribe el nombre del producto para consultar su precio:")
+                    return
+                elif command == "3":
+                    notification.answer(f"{CONTACTO_MESSAGE}\n\n{HORARIO_MESSAGE}")
+                    return
+                elif command == "4":
+                    state_manager.clear_state(user_id)
+                    notification.answer("Modo IA activado 🤖. Escribe tu pregunta libremente:")
+                    return
+                else:
+                    notification.answer("⚠️ Opción no válida. Por favor, envía 1, 2, 3 o 4.")
+                    return
+
+            if current_state in [state_manager.STATE_ESPERANDO_PRODUCTO_STOCK, state_manager.STATE_ESPERANDO_PRODUCTO_PRECIO]:
+                producto_info = inventory_service.buscar_producto(user_message)
+                state_manager.set_state(user_id, state_manager.STATE_MENU_PRINCIPAL)
                 
-            if current_state == state_manager.STATE_ESPERANDO_PRODUCTO_STOCK:
-                notification.answer(
-                    f"📦 *Stock disponible*\n"
-                    f"Producto: {producto_info['nombre']}\n"
-                    f"Cantidad: {producto_info['stock']} unidades\n\n" + WELCOME_MESSAGE
-                )
-            else:
-                notification.answer(
-                    f"💰 *Precio*\n"
-                    f"Producto: {producto_info['nombre']}\n"
-                    f"Precio: ${producto_info['precio']:.2f}\n\n" + WELCOME_MESSAGE
-                )
-            return
+                if not producto_info:
+                    notification.answer(
+                        f"❌ No encontré ningún producto que coincida con '{user_message}'.\n\n" + WELCOME_MESSAGE
+                    )
+                    return
+                    
+                if current_state == state_manager.STATE_ESPERANDO_PRODUCTO_STOCK:
+                    notification.answer(
+                        f"📦 *Stock disponible*\n"
+                        f"Producto: {producto_info['nombre']}\n"
+                        f"Cantidad: {producto_info['stock']} unidades\n\n" + WELCOME_MESSAGE
+                    )
+                else:
+                    notification.answer(
+                        f"💰 *Precio*\n"
+                        f"Producto: {producto_info['nombre']}\n"
+                        f"Precio: ${producto_info['precio']:.2f}\n\n" + WELCOME_MESSAGE
+                    )
+                return
 
-        if command == COMMAND_HELP:
-            logger.info("Comando /ayuda recibido.")
-            notification.answer(HELP_MESSAGE)
-            return
+            if command == COMMAND_HELP:
+                logger.info("Comando /ayuda recibido.")
+                notification.answer(HELP_MESSAGE)
+                return
 
-        if command == COMMAND_STOCK:
-            logger.info("Comando /stock recibido.")
-            notification.answer(STOCK_MESSAGE)
-            return
+            if command == COMMAND_STOCK:
+                logger.info("Comando /stock recibido.")
+                notification.answer(STOCK_MESSAGE)
+                return
 
-        if command == COMMAND_PRECIO:
-            logger.info("Comando /precio recibido.")
-            notification.answer(PRECIO_MESSAGE)
-            return
+            if command == COMMAND_PRECIO:
+                logger.info("Comando /precio recibido.")
+                notification.answer(PRECIO_MESSAGE)
+                return
 
-        if command == COMMAND_CONTACTO:
-            logger.info("Comando /contacto recibido.")
-            notification.answer(CONTACTO_MESSAGE)
-            return
+            if command == COMMAND_CONTACTO:
+                logger.info("Comando /contacto recibido.")
+                notification.answer(CONTACTO_MESSAGE)
+                return
 
-        if command == COMMAND_HORARIO:
-            logger.info("Comando /horario recibido.")
-            notification.answer(HORARIO_MESSAGE)
-            return
+            if command == COMMAND_HORARIO:
+                logger.info("Comando /horario recibido.")
+                notification.answer(HORARIO_MESSAGE)
+                return
 
-        # --- Procesamiento de Texto Plano (Motor de IA) ---
-        bot_reply = engine.responder(user_message)
-        notification.answer(bot_reply)
+            # --- Procesamiento de Texto Plano (Motor de IA) ---
+            bot_reply = engine.responder(user_message)
+            notification.answer(bot_reply)
+
+        except Exception as e:
+            logger.error(f"Error procesando mensaje de {notification.sender}: {e}", exc_info=True)
+            try:
+                notification.answer("⚠️ Ocurrió un error procesando tu mensaje. Por favor intenta de nuevo.")
+            except Exception:
+                logger.error("No se pudo enviar mensaje de error al usuario.", exc_info=True)
+
