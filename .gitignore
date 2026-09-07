@@ -17,3 +17,6 @@ Upgrade_sistema_inventario_chatbot.md
 tareas_opencode.md
 PLAN_MONETIZACION.md
 instrucciones_gemini.md
+
+# Ignorar bases de datos SQLite locales (artefactos de ejecución)
+*.db
