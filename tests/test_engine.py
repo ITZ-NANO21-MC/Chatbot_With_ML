@@ -113,3 +113,32 @@ def test_responder_empty_input(engine):
     pregunta = ""
     respuesta = engine.responder(pregunta)
     assert respuesta == "No estoy seguro de entender. ¿Podrías intentar con otras palabras?"
+
+
+def test_recargar_conocimiento_refleja_cambios(knowledge_base_file):
+    """Recargar el JSON debe reflejar ediciones sin reiniciar el proceso.
+
+    Args:
+        knowledge_base_file: Fixture con la ruta a la base de conocimiento.
+    """
+    engine = ChatbotEngine(str(knowledge_base_file))
+
+    assert engine.responder("venden pan?") == \
+        "No estoy seguro de entender. ¿Podrías intentar con otras palabras?"
+
+    datos = json.loads(knowledge_base_file.read_text(encoding="utf-8"))
+    datos["conocimiento"].append(
+        {
+            "pregunta_base": "aceptan transferencia",
+            "respuesta": "Sí, aceptamos transferencia bancaria.",
+            "sinonimos": ["puedo pagar por transferencia", "bay bank"],
+        }
+    )
+    knowledge_base_file.write_text(
+        json.dumps(datos, ensure_ascii=False), encoding="utf-8"
+    )
+
+    engine.recargar_conocimiento()
+
+    assert engine.responder("aceptan transferencia") == \
+        "Sí, aceptamos transferencia bancaria."

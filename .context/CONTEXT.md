@@ -74,10 +74,10 @@ Chatbot_With_ML/
 
 ## Estado de Madurez
 
-- **Estable para producción a pequeña escala** (suite completa en verde: 39 pruebas; flujo verificado con REPL local).
+- **Estable para producción a pequeña escala** (suite completa en verde: 45 pruebas; flujo verificado con REPL local).
 - Plan original Fases 0–4 **completadas** (estructura modular, comandos, menús, inventario multi-fuente).
-- Fase 5 (estabilización) **en curso** en la rama `feat/local-testing-repl`: tests reparados, `/stock`/`/precio` integrados con inventario real, fuzzy de inventario robustecido, README sincronizado.
-- Fases 6–7 pendientes (facturación, despliegue como servicio). Deuda técnica restante: estados sin persistencia, conocimiento cargado solo al inicio.
+- Fase 5 (estabilización) **completada**: tests reparados, `/stock`/`/precio` integrados con inventario real, fuzzy de inventario robustecido, state_manager thread-safe, recarga de knowledge base, README sincronizado.
+- Fases 6–8 pendientes (facturación, robustez/observabilidad, despliegue como servicio). Deuda técnica remanente: estados sin persistencia entre reinicios, conocimiento sin TTL de caché, sin límite de tamaño en el dict de estados (mejora opcional).
 
 ## Referencias
 

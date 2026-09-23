@@ -2,12 +2,12 @@
 
 ## Estado Actual
 
-- **Fase activa:** Fase 5 — Estabilización y Deuda Técnica.
-- **Módulo activo:** 5.3 — Sincronizar README y actualizar `CONTEXT.md` de la rama.
-- **Última acción:** Módulo 5.2 completado — `/stock` y `/precio` usan el flujo de inventario real (estados `ESPERANDO_PRODUCTO_*`, prompts `STOCK_PROMPT`/`PRECIO_PROMPT`); eliminadas constantes obsoletas. Mejorado el fuzzy de `inventory_service.py` (WRatio + partial_ratio) que antes fallaba con consultas parciales ("cargador tipo c"), con nueva suite `tests/test_inventory_service.py`. Suite: **39 passed**. REPL local verificado (inventario SQLite sembrado, `/stock`/`/precio` con datos reales).
-- **Siguiente acción:** Módulo 5.3 — sincronizar `README.md` con la estructura real y el estado de tests; ajustar `CONTEXT.md` (tree y suite de esta rama).
+- **Fase activa:** ninguna — Fase 5 (Estabilización) **completada** (módulos 5.1–5.5).
+- **Módulo activo:** — (pendiente decidir siguiente fase: 6 Facturación, 7 Robustez u 8 Despliegue).
+- **Última acción:** Módulos 5.4 y 5.5 completados — `state_manager.py` thread-safe (`threading.RLock` + tests multi-hilo) y `ChatbotEngine.recargar_conocimiento()` (recarga del JSON sin reinicio, test verificado). Suite: **45 passed**. REPL local verificado previamente.
+- **Siguiente acción:** Commitear cierre de 5.4–5.5 y decidir en qué rama/orden seguir (Fases 6–8).
 - **Bloqueos:** Ninguno. Entorno de pruebas: venv `/home/nano/Documentos/dev-env` (Python 3.12.3, pytest 9.0.2).
-- **Cambios pendientes sin commitear en la rama:** `tests/test_engine.py`, `app/services/message_processor.py`, `app/services/inventory_service.py`, `tests/test_inventory_service.py`, `.env.example`, `.context/` (STATE/ROADMAP/plans).
+- **Cambios pendientes sin commitear en la rama:** `app/services/state_manager.py`, `app/services/chatbot_engine.py`, `tests/test_state_manager.py`, `tests/test_engine.py`, `.context/` (STATE/ROADMAP/plans).
 
 ## Plan Fase 5 — Estabilización y Deuda Técnica
 

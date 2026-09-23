@@ -36,6 +36,8 @@ class ChatbotEngine:
         self.logger = get_logger(__name__)
         self.logger.info("Inicializando ChatbotEngine...")
 
+        self._knowledge_base_path = knowledge_base_path
+
         try:
             self._cargar_conocimiento(knowledge_base_path)
             self._entrenar_vectorizador()
@@ -43,6 +45,21 @@ class ChatbotEngine:
         except Exception as e:
             self.logger.error(f"Error crítico durante la inicialización: {e}", exc_info=True)
             raise
+
+    def recargar_conocimiento(self, knowledge_base_path: Optional[str] = None):
+        """Recarga la base de conocimiento y reentrena el vectorizador.
+
+        Permite reflejar ediciones del archivo JSON sin reiniciar el proceso.
+
+        Args:
+            knowledge_base_path (Optional[str]): Ruta al archivo JSON. Si es
+                None, reutiliza la ruta usada en `__init__`.
+        """
+        ruta = knowledge_base_path or self._knowledge_base_path
+        self.logger.info("Recargando base de conocimiento...")
+        self._cargar_conocimiento(ruta)
+        self._entrenar_vectorizador()
+        self.logger.info("Base de conocimiento recargada exitosamente.")
 
     def _cargar_conocimiento(self, file_path: str):
         """Carga y expande la base de conocimiento desde un archivo JSON.
