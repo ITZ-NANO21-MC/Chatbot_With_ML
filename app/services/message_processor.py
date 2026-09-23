@@ -32,9 +32,9 @@ WELCOME_MESSAGE = (
     "4️⃣ Hablar con el asistente inteligente (IA)"
 )
 
-STOCK_MESSAGE = "📦 Consultas de stock: ¡Próximamente estará integrado con nuestro inventario!"
+STOCK_PROMPT = "📦 Por favor, escribe el nombre del producto para consultar su stock:"
 
-PRECIO_MESSAGE = "💰 Consultas de precios: ¡Próximamente podrás consultar precios actualizados!"
+PRECIO_PROMPT = "💰 Por favor, escribe el nombre del producto para consultar su precio:"
 
 CONTACTO_MESSAGE = (
     "📞 *Contacto*\n"
@@ -78,7 +78,7 @@ def procesar_mensaje(engine: ChatbotEngine, usuario: str, mensaje: str) -> Optio
     """
     logger.debug(f"Mensaje recibido de '{usuario}': '{mensaje}'")
 
-    if not mensaje:
+    if not mensaje or not mensaje.strip():
         logger.warning(f"Mensaje vacío de {usuario}. Ignorando.")
         return None
 
@@ -90,16 +90,25 @@ def procesar_mensaje(engine: ChatbotEngine, usuario: str, mensaje: str) -> Optio
         state_manager.set_state(usuario, state_manager.STATE_MENU_PRINCIPAL)
         return WELCOME_MESSAGE
 
+    # --- Comandos directos de inventario (acceso desde cualquier estado) ---
+    if comando == COMMAND_STOCK:
+        state_manager.set_state(usuario, state_manager.STATE_ESPERANDO_PRODUCTO_STOCK)
+        return STOCK_PROMPT
+
+    if comando == COMMAND_PRECIO:
+        state_manager.set_state(usuario, state_manager.STATE_ESPERANDO_PRODUCTO_PRECIO)
+        return PRECIO_PROMPT
+
     # --- Manejo de estados multi-turno ---
     estado_actual = state_manager.get_state(usuario)
 
     if estado_actual == state_manager.STATE_MENU_PRINCIPAL:
         if comando == "1":
             state_manager.set_state(usuario, state_manager.STATE_ESPERANDO_PRODUCTO_STOCK)
-            return "📦 Por favor, escribe el nombre del producto para consultar su stock:"
+            return STOCK_PROMPT
         elif comando == "2":
             state_manager.set_state(usuario, state_manager.STATE_ESPERANDO_PRODUCTO_PRECIO)
-            return "💰 Por favor, escribe el nombre del producto para consultar su precio:"
+            return PRECIO_PROMPT
         elif comando == "3":
             return f"{CONTACTO_MESSAGE}\n\n{HORARIO_MESSAGE}"
         elif comando == "4":
@@ -140,14 +149,6 @@ def procesar_mensaje(engine: ChatbotEngine, usuario: str, mensaje: str) -> Optio
     if comando == COMMAND_HELP:
         logger.info("Comando /ayuda recibido.")
         return HELP_MESSAGE
-
-    if comando == COMMAND_STOCK:
-        logger.info("Comando /stock recibido.")
-        return STOCK_MESSAGE
-
-    if comando == COMMAND_PRECIO:
-        logger.info("Comando /precio recibido.")
-        return PRECIO_MESSAGE
 
     if comando == COMMAND_CONTACTO:
         logger.info("Comando /contacto recibido.")

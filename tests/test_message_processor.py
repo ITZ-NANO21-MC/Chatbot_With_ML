@@ -17,8 +17,8 @@ from app.services.message_processor import (
     HELP_MESSAGE,
     CONTACTO_MESSAGE,
     HORARIO_MESSAGE,
-    STOCK_MESSAGE,
-    PRECIO_MESSAGE,
+    STOCK_PROMPT,
+    PRECIO_PROMPT,
 )
 
 
@@ -161,16 +161,36 @@ def test_comando_ayuda(engine):
     assert respuesta == HELP_MESSAGE
 
 
-def test_comando_stock_directo(engine):
-    """Comando /stock directo debe responder mensaje de stock."""
+@patch("app.services.message_processor.inventory_service.buscar_producto")
+def test_comando_stock_directo(mock_buscar, engine):
+    """Comando /stock debe pedir el producto y pasar al estado de espera de stock."""
     respuesta = procesar_mensaje(engine, "user1", "/stock")
-    assert respuesta == STOCK_MESSAGE
+    assert respuesta == STOCK_PROMPT
+    assert state_manager.get_state("user1") == state_manager.STATE_ESPERANDO_PRODUCTO_STOCK
+    mock_buscar.assert_not_called()
 
 
-def test_comando_precio_directo(engine):
-    """Comando /precio directo debe responder mensaje de precio."""
+@patch("app.services.message_processor.inventory_service.buscar_producto")
+def test_comando_precio_directo(mock_buscar, engine):
+    """Comando /precio debe pedir el producto y pasar al estado de espera de precio."""
     respuesta = procesar_mensaje(engine, "user1", "/precio")
-    assert respuesta == PRECIO_MESSAGE
+    assert respuesta == PRECIO_PROMPT
+    assert state_manager.get_state("user1") == state_manager.STATE_ESPERANDO_PRODUCTO_PRECIO
+    mock_buscar.assert_not_called()
+
+
+@patch("app.services.message_processor.inventory_service.buscar_producto")
+def test_comando_stock_ejecuta_flujo_inventario(mock_buscar, engine):
+    """Tras /stock, enviar un producto debe consultar el inventario real."""
+    mock_buscar.return_value = {"nombre": "Laptop", "precio": 999.99, "stock": 10}
+
+    procesar_mensaje(engine, "user1", "/stock")
+    respuesta = procesar_mensaje(engine, "user1", "Laptop")
+
+    assert "Stock disponible" in respuesta
+    assert "Laptop" in respuesta
+    assert state_manager.get_state("user1") == state_manager.STATE_MENU_PRINCIPAL
+    mock_buscar.assert_called_once_with("Laptop")
 
 
 def test_comando_contacto_directo(engine):

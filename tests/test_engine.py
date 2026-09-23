@@ -8,7 +8,7 @@ respuesta funcionen como se espera.
 
 import json
 import pytest
-from app.chatbot.engine import ChatbotEngine
+from app.services.chatbot_engine import ChatbotEngine
 
 @pytest.fixture
 def knowledge_base_file(tmp_path):

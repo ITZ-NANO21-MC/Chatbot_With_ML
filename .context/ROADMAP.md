@@ -20,9 +20,10 @@
 **Objetivo:** Dejar el proyecto con tests verdes y documentación alineada al código real antes de añadir funcionalidad nueva. Es prerequisito para Fases 6–8.
 
 ### Módulos
-- [ ] **Reparar tests rotos** — `tests/test_engine.py` ➜ `from app.services.chatbot_engine import ChatbotEngine`; `tests/test_api.py` ➜ `from app.handlers.message_handler import register_handlers`. Verificar `pytest` verde.
-- [ ] **Limpiar mensajes obsoletos** — `STOCK_MESSAGE`/`PRECIO_MESSAGE` en `message_handler.py` dicen "Próximamente", pero el menú ya integra inventario real. Unificar respuestas.
-- [ ] **Sincronizar README y .env.example** — estructura real (`handlers/services/utils`), variables `TFIDF_THRESHOLD`, `FUZZY_THRESHOLD`, `INVENTORY_SOURCE_TYPE`, `INVENTORY_*`, y estado de los tests.
+- [x] **Reparar tests rotos** — `tests/test_engine.py` ➜ import a `app.services.chatbot_engine`; `test_api.py` ya reemplazado por `test_handlers.py`/`test_message_processor.py`. Bug de mensajes solo-espacios corregido. Suite: 33 passed.
+- [x] **Limpiar mensajes obsoletos** — `/stock` y `/precio` ahora inician el flujo de inventario real (estados `ESPERANDO_PRODUCTO_*`), eliminados `STOCK_MESSAGE`/`PRECIO_MESSAGE`. Mejorado el fuzzy de inventario (WRatio+partial_ratio) con `tests/test_inventory_service.py`. Suite: 39 passed.
+- [x] **Sincronizar README y .env.example** — README reescrito con estructura real (`handlers/services/utils`, `scripts/repl_local.py`, `.context/`), flujo por estados y comandos, configuración completa de inventario y suite de 39 tests. `.env.example` completo. `CONTEXT.md` actualizado (árbol, entidades, madurez).
+- [ ] **Persistencia de estado multi-hilo** — `state_manager.py` es un dict en memoria sin lock (5.4).
 - [ ] **Concurrencia en `state_manager.py`** — el dict global en memoria no tiene protección para múltiples notificaciones simultáneas.
 - [ ] **Manejo de edición de `knowledge_base.json`** — documentar/automatizar recarga sin reinicio o dejar claro el reinicio.
 

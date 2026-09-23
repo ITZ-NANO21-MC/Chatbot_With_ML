@@ -3,10 +3,11 @@
 ## Estado Actual
 
 - **Fase activa:** Fase 5 — Estabilización y Deuda Técnica.
-- **Módulo activo:** Reparación de tests rotos (imports a módulos inexistentes).
-- **Última acción:** Adopción del proyecto legado a Spec-Driven Development (`/adopt`): creación de `.context/` (CONTEXT.md, ROADMAP.md, STATE.md, DECISIONS.md, PATTERNS.md, WORKFLOW.md) y `.prompts/` con roles estándar.
-- **Siguiente acción:** Módulo 5.1 — Actualizar imports en `tests/test_engine.py` (`app.chatbot.engine` ➜ `app.services.chatbot_engine`) y `tests/test_api.py` (`app.api.routes` ➜ `app.handlers.message_handler`), y ejecutar `pytest` hasta dejarlo verde.
-- **Bloqueos:** Ninguno conocido. Nota: requiere dependencias instaladas (`pip install -r requirements.txt`) y `pytest` para ejecutar la suite.
+- **Módulo activo:** 5.3 — Sincronizar README y actualizar `CONTEXT.md` de la rama.
+- **Última acción:** Módulo 5.2 completado — `/stock` y `/precio` usan el flujo de inventario real (estados `ESPERANDO_PRODUCTO_*`, prompts `STOCK_PROMPT`/`PRECIO_PROMPT`); eliminadas constantes obsoletas. Mejorado el fuzzy de `inventory_service.py` (WRatio + partial_ratio) que antes fallaba con consultas parciales ("cargador tipo c"), con nueva suite `tests/test_inventory_service.py`. Suite: **39 passed**. REPL local verificado (inventario SQLite sembrado, `/stock`/`/precio` con datos reales).
+- **Siguiente acción:** Módulo 5.3 — sincronizar `README.md` con la estructura real y el estado de tests; ajustar `CONTEXT.md` (tree y suite de esta rama).
+- **Bloqueos:** Ninguno. Entorno de pruebas: venv `/home/nano/Documentos/dev-env` (Python 3.12.3, pytest 9.0.2).
+- **Cambios pendientes sin commitear en la rama:** `tests/test_engine.py`, `app/services/message_processor.py`, `app/services/inventory_service.py`, `tests/test_inventory_service.py`, `.env.example`, `.context/` (STATE/ROADMAP/plans).
 
 ## Plan Fase 5 — Estabilización y Deuda Técnica
 
