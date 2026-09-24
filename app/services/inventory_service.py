@@ -6,13 +6,49 @@ múltiples fuentes de datos (SQLite local o archivo CSV).
 """
 import sqlite3
 import csv
-from typing import Optional, Dict, Any
-from rapidfuzz import process, fuzz
+from typing import Optional, Dict, Any, List
+from rapidfuzz import fuzz
 
 from app import config
 from app.utils.logger import get_logger
 
 logger = get_logger(__name__)
+
+
+def _puntaje_producto(query: str, choice: str) -> float:
+    """Calcula la similitud entre la consulta y un nombre de producto.
+
+    Combina WRatio (tolerante a errores tipográficos y orden de palabras)
+    con partial_ratio (captura consultas parciales o abreviadas).
+
+    Args:
+        query (str): Texto de la consulta del usuario.
+        choice (str): Nombre del producto candidato.
+
+    Returns:
+        float: Puntuación de similitud entre 0 y 100.
+    """
+    return max(fuzz.WRatio(query, choice), fuzz.partial_ratio(query, choice))
+
+
+def _mejor_producto(query: str, nombres: List[str]) -> Optional[str]:
+    """Encuentra el nombre de producto más similar por encima del umbral.
+
+    Args:
+        query (str): Texto de la consulta del usuario.
+        nombres (List[str]): Lista de nombres de productos disponibles.
+
+    Returns:
+        Optional[str]: El nombre más similar si supera el umbral, o None.
+    """
+    mejor_nombre, mejor_puntaje = None, 0.0
+    for nombre in nombres:
+        puntaje = _puntaje_producto(query, nombre)
+        if puntaje > mejor_puntaje:
+            mejor_nombre, mejor_puntaje = nombre, puntaje
+    if mejor_puntaje >= config.FUZZY_SCORE_THRESHOLD:
+        return mejor_nombre
+    return None
 
 
 def buscar_producto(nombre_producto: str) -> Optional[Dict[str, Any]]:
@@ -55,16 +91,10 @@ def _buscar_en_sqlite(nombre_producto: str) -> Optional[Dict[str, Any]]:
         # Convertir a lista de nombres
         nombres = [row[0] for row in resultados]
 
-        # Búsqueda difusa para tolerar errores ortográficos
-        mejor_coincidencia = process.extractOne(
-            query=nombre_producto,
-            choices=nombres,
-            scorer=fuzz.WRatio,
-            score_cutoff=config.FUZZY_SCORE_THRESHOLD
-        )
+        # Búsqueda difusa para tolerar errores ortográficos y consultas parciales
+        nombre_encontrado = _mejor_producto(nombre_producto, nombres)
 
-        if mejor_coincidencia:
-            nombre_encontrado = mejor_coincidencia[0]
+        if nombre_encontrado:
             # Buscar el row original
             for row in resultados:
                 if row[0] == nombre_encontrado:
@@ -97,15 +127,9 @@ def _buscar_en_csv(nombre_producto: str) -> Optional[Dict[str, Any]]:
 
         nombres = [p.get('nombre', '') for p in productos]
 
-        mejor_coincidencia = process.extractOne(
-            query=nombre_producto,
-            choices=nombres,
-            scorer=fuzz.WRatio,
-            score_cutoff=config.FUZZY_SCORE_THRESHOLD
-        )
+        nombre_encontrado = _mejor_producto(nombre_producto, nombres)
 
-        if mejor_coincidencia:
-            nombre_encontrado = mejor_coincidencia[0]
+        if nombre_encontrado:
             for p in productos:
                 if p.get('nombre') == nombre_encontrado:
                     return {

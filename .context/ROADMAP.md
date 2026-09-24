@@ -8,26 +8,28 @@
 | Fase 2 | ✅ Completada | Comandos básicos `/stock`, `/precio`, `/contacto`, `/horario` (commit `881eee5`). |
 | Fase 3 | ✅ Completada | Conversación con menús y gestión de estado por usuario (commit `4981dd7`). |
 | Fase 4 | ✅ Completada | Inventario multi-fuente SQLite/CSV (commit `b4aafb1`). |
-| Fase 5 | 🚧 **En curso** | Estabilización y deuda técnica (tests rotos, mensajes obsoletos, docs). |
+| Fase 5 | ✅ Completada | Estabilización y deuda técnica (tests verdes, mensajes coherentes, docs sincronizadas). |
 | Fase 6 | ⬜ Pendiente | Facturación y mensajes programados. |
 | Fase 7 | ⬜ Pendiente | Robustez, logs rotativos y reportes. |
 | Fase 8 | ⬜ Pendiente | Despliegue como servicio (systemd). |
 
 ---
 
-## Fase 5 — Estabilización y Deuda Técnica (en curso)
+## Fase 5 — Estabilización y Deuda Técnica (completada)
 
 **Objetivo:** Dejar el proyecto con tests verdes y documentación alineada al código real antes de añadir funcionalidad nueva. Es prerequisito para Fases 6–8.
 
 ### Módulos
-- [ ] **Reparar tests rotos** — `tests/test_engine.py` ➜ `from app.services.chatbot_engine import ChatbotEngine`; `tests/test_api.py` ➜ `from app.handlers.message_handler import register_handlers`. Verificar `pytest` verde.
-- [ ] **Limpiar mensajes obsoletos** — `STOCK_MESSAGE`/`PRECIO_MESSAGE` en `message_handler.py` dicen "Próximamente", pero el menú ya integra inventario real. Unificar respuestas.
-- [ ] **Sincronizar README y .env.example** — estructura real (`handlers/services/utils`), variables `TFIDF_THRESHOLD`, `FUZZY_THRESHOLD`, `INVENTORY_SOURCE_TYPE`, `INVENTORY_*`, y estado de los tests.
-- [ ] **Concurrencia en `state_manager.py`** — el dict global en memoria no tiene protección para múltiples notificaciones simultáneas.
-- [ ] **Manejo de edición de `knowledge_base.json`** — documentar/automatizar recarga sin reinicio o dejar claro el reinicio.
+- [x] **Reparar tests rotos** — `tests/test_engine.py` ➜ import a `app.services.chatbot_engine`; `test_api.py` reemplazado por `test_handlers.py`/`test_message_processor.py`. Bug de mensajes solo-espacios corregido.
+- [x] **Limpiar mensajes obsoletos** — `/stock` y `/precio` inician el flujo de inventario real (estados `ESPERANDO_PRODUCTO_*`); eliminadas `STOCK_MESSAGE`/`PRECIO_MESSAGE`. Fuzzy de inventario robustecido (WRatio + partial_ratio) con `tests/test_inventory_service.py`.
+- [x] **Sincronizar README y .env.example** — README reescrito con estructura real y `CONTEXT.md` actualizado (árbol, entidades, madurez).
+- [x] **Concurrencia en `state_manager.py`** — `threading.RLock` protege get/set/clear; tests multi-hilo (`tests/test_state_manager.py`). Mejora opcional no aplicada: TTL/límite de tamaño.
+- [x] **Recarga de `knowledge_base.json`** — `ChatbotEngine.recargar_conocimiento()` reentrena el vectorizador sin reiniciar; test de recarga que refleja ediciones del JSON.
+
+**Cierre:** Suite completa: **45 pruebas en verde**. REPL local verificado. Commits: `dade28f` (5.1–5.3) y cierre 5.4–5.5.
 
 ### Dependencias
-- Tests reparados ✅ (bloqueo principal: nada ejecutará `pytest` hasta arreglar los imports).
+- Tests reparados ✅ (bloqueo principal resuelto).
 
 ---
 
@@ -76,7 +78,7 @@
 
 ### Fase 4 — Inventario Multi-Fuente (completada)
 - `app/services/inventory_service.py` con `buscar_producto()` y arquitectura SQLite/CSV vía `INVENTORY_SOURCE_TYPE`.
-- Búsqueda difusa con RapidFuzz `WRatio` y `score_cutoff=70`.
+- Búsqueda difusa combinada (WRatio + partial_ratio) con `FUZZY_SCORE_THRESHOLD`.
 - Datos de ejemplo: `app/data/inventory.db`, `app/data/inventory.csv`.
 
 ### Fase 3 — Conversación con Menús (completada)

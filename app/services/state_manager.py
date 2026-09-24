@@ -2,9 +2,15 @@
 """Módulo de Gestión de Estado.
 
 Mantiene el contexto o estado de la conversación de los usuarios en memoria (RAM).
+
+El acceso concurrente es seguro mediante un RLock: GreenAPIBot procesa los
+mensajes de cada usuario desde el hilo de su webhook, y un usuario puede
+tener mensajes en tránsito a la vez que otro los consulta.
 """
+import threading
 
 _user_states = {}
+_lock = threading.RLock()
 
 # Constantes de Estado
 STATE_MENU_PRINCIPAL = "MENU_PRINCIPAL"
@@ -21,7 +27,8 @@ def get_state(user_id: str) -> str:
     Returns:
         str: El estado actual, o None si no tiene estado activo.
     """
-    return _user_states.get(user_id)
+    with _lock:
+        return _user_states.get(user_id)
 
 
 def set_state(user_id: str, state: str) -> None:
@@ -31,7 +38,8 @@ def set_state(user_id: str, state: str) -> None:
         user_id (str): Identificador único del usuario.
         state (str): El nuevo estado a asignar.
     """
-    _user_states[user_id] = state
+    with _lock:
+        _user_states[user_id] = state
 
 
 def clear_state(user_id: str) -> None:
@@ -40,5 +48,6 @@ def clear_state(user_id: str) -> None:
     Args:
         user_id (str): Identificador único del usuario.
     """
-    if user_id in _user_states:
-        del _user_states[user_id]
+    with _lock:
+        if user_id in _user_states:
+            del _user_states[user_id]

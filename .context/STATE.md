@@ -2,11 +2,12 @@
 
 ## Estado Actual
 
-- **Fase activa:** Fase 5 — Estabilización y Deuda Técnica.
-- **Módulo activo:** Reparación de tests rotos (imports a módulos inexistentes).
-- **Última acción:** Adopción del proyecto legado a Spec-Driven Development (`/adopt`): creación de `.context/` (CONTEXT.md, ROADMAP.md, STATE.md, DECISIONS.md, PATTERNS.md, WORKFLOW.md) y `.prompts/` con roles estándar.
-- **Siguiente acción:** Módulo 5.1 — Actualizar imports en `tests/test_engine.py` (`app.chatbot.engine` ➜ `app.services.chatbot_engine`) y `tests/test_api.py` (`app.api.routes` ➜ `app.handlers.message_handler`), y ejecutar `pytest` hasta dejarlo verde.
-- **Bloqueos:** Ninguno conocido. Nota: requiere dependencias instaladas (`pip install -r requirements.txt`) y `pytest` para ejecutar la suite.
+- **Fase activa:** ninguna — Fase 5 (Estabilización) **completada** (módulos 5.1–5.5).
+- **Módulo activo:** — (pendiente decidir siguiente fase: 6 Facturación, 7 Robustez u 8 Despliegue).
+- **Última acción:** Módulos 5.4 y 5.5 completados — `state_manager.py` thread-safe (`threading.RLock` + tests multi-hilo) y `ChatbotEngine.recargar_conocimiento()` (recarga del JSON sin reinicio, test verificado). Suite: **45 passed**. REPL local verificado previamente.
+- **Siguiente acción:** Commitear cierre de 5.4–5.5 y decidir en qué rama/orden seguir (Fases 6–8).
+- **Bloqueos:** Ninguno. Entorno de pruebas: venv `/home/nano/Documentos/dev-env` (Python 3.12.3, pytest 9.0.2).
+- **Cambios pendientes sin commitear en la rama:** `app/services/state_manager.py`, `app/services/chatbot_engine.py`, `tests/test_state_manager.py`, `tests/test_engine.py`, `.context/` (STATE/ROADMAP/plans).
 
 ## Plan Fase 5 — Estabilización y Deuda Técnica
 

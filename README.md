@@ -1,257 +1,234 @@
-# 🤖 Chatbot para WhatsApp con Machine Learning
+# Chatbot para WhatsApp con Machine Learning
 
-[![Python Version](https://img.shields.io/badge/python-3.8%2B-blue)](https://www.python.org/)
-[![Scikit-learn](https://img.shields.io/badge/scikit--learn-1.0%2B-orange)](https://scikit-learn.org/)
+[![Python Version](https://img.shields.io/badge/python-3.12%2B-blue)](https://www.python.org/)
+[![Scikit-learn](https://img.shields.io/badge/scikit--learn-1.3%2B-orange)](https://scikit-learn.org/)
+[![RapidFuzz](https://img.shields.io/badge/rapidfuzz-3.0%2B-brightgreen)](https://github.com/maxbachmann/RapidFuzz)
 [![Green-API](https://img.shields.io/badge/Green--API-Compatible-brightgreen)](https://green-api.com/)
-[![Coverage](https://img.shields.io/badge/coverage-85%25-green)]()
-[![License](https://img.shields.io/badge/license-MIT-lightgrey)](LICENSE)
 
-Un chatbot inteligente para WhatsApp que utiliza **Machine Learning** (scikit-learn) para comprender el lenguaje natural y responder consultas de forma contextual. Diseñado con una arquitectura modular profesional, fácil de extender y desplegar.
+Chatbot para WhatsApp con **Machine Learning** que automatiza la atención al cliente de una PYME. Comprende lenguaje natural en español mediante un **motor de IA híbrido** (TF-IDF + similitud de coseno con respaldo de fuzzy matching), gestiona un **menú de conversación por estados** y resuelve consultas de **stock y precios** contra un inventario local intercambiable (SQLite o CSV).
 
-## ✨ Características Principales
+## Caracteristicas Principales
 
-- **🧠 Motor de IA Híbrido**: Combina la precisión de **TF-IDF y similitud de coseno** con un sistema de respaldo de **fuzzy matching** para manejar errores tipográficos.
-- **📚 Base de Conocimiento Externa**: Todo el conocimiento del bot reside en un archivo JSON, permitiendo actualizaciones sin modificar el código.
-- **🛡️ Robustez Industrial**: Manejo de errores exhaustivo y sistema de logging completo para monitorización en producción.
-- **🔌 Arquitectura Modular**: Separación clara de responsabilidades (API, motor de IA, datos) siguiendo el patrón "monolito mejorado".
-- **⚡ Fácil Integración**: Listo para conectar con WhatsApp a través de la API de Green-API con configuración mínima.
+- **Motor de IA hibrido**: Camino principal con **TF-IDF + similitud de coseno** sobre una base de conocimiento expandida con sinonimos; camino de respaldo con **RapidFuzz** para tolerar errores tipograficos y consultas parciales.
+- **Menu por estados**: Menu conversacional con estados (`MENU_PRINCIPAL`, `ESPERANDO_PRODUCTO_STOCK`, `ESPERANDO_PRODUCTO_PRECIO`) gestionados en memoria.
+- **Inventario multi-fuente**: Consultas de stock y precio via `buscar_producto()`, con fuente configurable (`INVENTORY_SOURCE_TYPE=sqlite|csv`).
+- **Base de conocimiento externa**: Todo el conocimiento reside en `app/data/knowledge_base.json` (separacion dato/codigo).
+- **Arquitectura modular**: `handlers` (ruteo), `services` (motor IA, inventario, estados) y `utils` (logging), patrón "monolito mejorado".
+- **Testeo sin WhatsApp**: REPL local (`scripts/repl_local.py`) para probar el flujo completo de mensajes sin conectarse a Green-API.
 
-## 🏗️ Arquitectura del Sistema
+## Arquitectura del Sistema
 
 ```mermaid
 graph TB
     A[Usuario de WhatsApp] --> B{Green-API}
     B --> C[run.py<br/>Punto de Entrada]
-    C --> D[routes.py<br/>Manejador de Mensajes]
-    D --> E[engine.py<br/>Motor de Chatbot]
-    E --> F{Clasificación}
-    F -->|Alta confianza| G[TF-IDF + Cosine Similarity]
-    F -->|Baja confianza| H[Fuzzy Matching<br/>Red de Seguridad]
-    G --> I[Generar Respuesta]
-    H --> I
-    I --> J[knowledge_base.json<br/>Base de Conocimiento]
-    J --> K[Respuesta al Usuario]
-    K --> A
-    
-    style E fill:#e1f5fe
-    style J fill:#f3e5f5
+    C --> D[message_handler.py<br/>Ruteo de Comandos y Estados]
+    D --> E[message_processor.py<br/>Logica de Mensajes]
+    E --> F{Intencion}
+    F -->|Menu / Command / Inventario| G[state_manager.py + inventory_service.py]
+    F -->|IA| H[chatbot_engine.py<br/>Motor de Chatbot]
+    H -->|Alta confianza| I[TF-IDF + Cosine Similarity]
+    H -->|Baja confianza| J[Fuzzy Matching<br/>Red de Seguridad]
+    I --> K[knowledge_base.json<br/>Base de Conocimiento]
+    J --> K
+    G --> L[inventory.db / inventory.csv<br/>Inventario]
+    K --> M[Respuesta al Usuario]
+    L --> M
+
+    style H fill:#e1f5fe
+    style K fill:#f3e5f5
 ```
 
-## 🚀 Comenzando
+## Comenzando
 
-### 📋 Prerrequisitos
+### Prerrequisitos
 
-- Python 3.8 o superior
-- Cuenta en [Green-API](https://green-api.com/) (plan Developer gratuito disponible)
-- Número de teléfono secundario para el bot (no puede ser tu número personal principal)
+- Python 3.12 o superior
+- Cuenta en [Green-API](https://green-api.com/) (plan Developer gratuito disponible) — solo necesario para ejecutar en WhatsApp
+- Número de teléfono secundario para el bot
 
-### 🔧 Instalación
+### Instalacion
 
 1. **Clonar el repositorio**
+
    ```bash
    git clone https://github.com/ITZ-NANO21-MC/Chatbot_With_ML.git
-   cd chatbot-whatsapp-ml
+   cd Chatbot_With_ML
    ```
 
 2. **Crear y activar entorno virtual**
+
    ```bash
    python -m venv venv
-   # En Linux/Mac:
-   source venv/bin/activate
-   # En Windows:
-   venv\Scripts\activate
+   source venv/bin/activate   # Linux/Mac
+   venv\Scripts\activate       # Windows
    ```
 
 3. **Instalar dependencias**
+
    ```bash
    pip install -r requirements.txt
    ```
 
-4. **Configurar credenciales**
-   Este proyecto usa un archivo `.env` para gestionar las credenciales de forma segura.
+4. **Configurar credenciales y opciones**
 
-   a. **Crear el archivo de entorno:**
-   Copia el archivo de ejemplo `.env.example` y renómbralo a `.env`.
+   Copia `.env.example` a `.env` y editalo:
+
    ```bash
-   # En Linux/Mac:
    cp .env.example .env
-   # En Windows:
-   copy .env.example .env
    ```
 
-   b. **Añadir tus credenciales:**
-   Abre el nuevo archivo `.env` y añade tus credenciales de Green-API:
    ```dotenv
+   # Credenciales Green-API (WhatsApp)
    ID_INSTANCE="TU_ID_DE_INSTANCIA"
    API_TOKEN_INSTANCE="TU_TOKEN_DE_API"
+
+   # Umbrales del motor de IA
+   TFIDF_THRESHOLD=0.3
+   FUZZY_THRESHOLD=70
+
+   # Inventario: sqlite (default) o csv
+   INVENTORY_SOURCE_TYPE="sqlite"
+   INVENTORY_SQLITE_PATH="app/data/inventory.db"
+   INVENTORY_CSV_PATH="app/data/inventory.csv"
    ```
-   **Importante:** El archivo `.env` está excluido del control de versiones por seguridad. Nunca compartas este archivo.
 
-5. **Configurar número de WhatsApp**
-   - Ve a la consola de Green-API
-   - Crea una nueva instancia (plan "Developer" para pruebas)
-   - Escanea el código QR con la app de WhatsApp de tu número dedicado al bot
+   El proyecto no arranca sin credenciales validas: `ID_INSTANCE` y `API_TOKEN_INSTANCE` se validan antes de conectar con Green-API.
 
-## 📖 Uso
+   **Importante:** `.env` esta excluido del control de versiones. Nunca lo compartas ni lo versiones.
 
-### Ejecución Local
+5. **Configurar el numero de WhatsApp**
+
+   - Ve a la consola de Green-API, crea una instancia (plan "Developer") y escanea el codigo QR con el numero dedicado al bot.
+
+## Uso
+
+### Ejecutar el bot en WhatsApp
+
 ```bash
 python run.py
 ```
 
-El bot se iniciará y mostrará:
+El bot validará credenciales e iniciará GreenAPIBot:
+
 ```
-2025-12-01 10:30:00 - __main__ - INFO - Iniciando la aplicación del chatbot...
-2025-12-01 10:30:01 - app.chatbot.engine - INFO - Inicializando ChatbotEngine...
-2025-12-01 10:30:01 - app.chatbot.engine - INFO - Cargando base de conocimiento desde: app/data/knowledge_base.json
-2025-12-01 10:30:01 - app.chatbot.engine - INFO - Datos expandidos: 5 -> 14 preguntas
-2025-12-01 10:30:01 - app.chatbot.engine - INFO - Bot iniciado. Escuchando mensajes...
+2026-09-22 10:30:00 - run - INFO - Iniciando la aplicacion del chatbot...
+2026-09-22 10:30:01 - app.services.chatbot_engine - INFO - Inicializando ChatbotEngine...
+2026-09-22 10:30:01 - app.services.chatbot_engine - INFO - Cargando base de conocimiento desde: app/data/knowledge_base.json
+2026-09-22 10:30:01 - app.services.chatbot_engine - INFO - Datos expandidos: 5 -> 17 preguntas
+2026-09-22 10:30:02 - run - INFO - Handlers registrados exitosamente.
+2026-09-22 10:30:02 - run - INFO - Bot iniciado. Escuchando mensajes...
 ```
 
-### Pruebas Básicas
-Envía estos mensajes a tu número del bot desde WhatsApp:
+### Probar localmente sin WhatsApp (REPL)
 
-| Mensaje del Usuario | Respuesta Esperada | Mecanismo Activado |
-|---------------------|-------------------|-------------------|
-| "hola" | "¡Hola! Soy tu bot asistente." | TF-IDF (exacto) |
-| "buenas tardes" | "¡Hola! Soy tu bot asistente." | TF-IDF (sinónimo) |
-| "qé haces" | "Puedo responder preguntas simples..." | Fuzzy Matching |
-| "información" | "No estoy seguro de entender..." | Fallback |
+```bash
+printf '/stock\npantalla iphone\n' | python scripts/repl_local.py
+```
 
-## 🧪 Pruebas (Testing)
+Ejecutar el REPL **no** conecta con Green-API: procesa los mensajes con el mismo `message_processor.py` que usa WhatsApp, mostrando la respuesta y el estado de conversación.
 
-Este proyecto utiliza `pytest` para las pruebas unitarias. Las pruebas se encuentran en el directorio `tests/`.
+### Menu y comandos
 
-Para ejecutar las pruebas, asegúrate de haber instalado todas las dependencias (incluyendo `pytest` y `pytest-mock`) y luego ejecuta el siguiente comando desde el directorio raíz del proyecto (`Chatbot_wha`):
+| Entrada | Accion |
+|---|---|
+| `1` (menú) / `/stock` | Consultar stock de un producto (pide el nombre) |
+| `2` (menú) / `/precio` | Consultar precio de un producto (pide el nombre) |
+| `3` | Información de contacto y horario |
+| `4` | Hablar con el asistente inteligente (IA) |
+| `/ayuda` | Mostrar lista de comandos |
+| `/contacto` | Información de contacto |
+| `/horario` | Horarios de atención |
+| cualquier texto | IA: TF-IDF + cosine similarity, con fallback fuzzy |
+
+## Pruebas (Testing)
+
+El proyecto usa `pytest`. Ejecuta desde la raiz con las dependencias instaladas:
 
 ```bash
 pytest
 ```
 
-Esto descubrirá y ejecutará automáticamente todas las pruebas en el directorio `tests/`, mostrando un resumen de los resultados.
+Suite actual: **39 pruebas** (motor de IA, procesador de mensajes, handlers, config, inventario SQLite/CSV e integración de flujos).
 
-## 📁 Estructura del Proyecto
+## Estructura del Proyecto
 
 ```
-
 Chatbot_With_ML/
-├── 📁 app/
-│   ├── 📁 api/
-│   │   ├── __init__.py
-│   │   └── routes.py          # Manejadores de la API de WhatsApp
-│   ├── 📁 chatbot/
-│   │   ├── __init__.py
-│   │   └── engine.py          # Motor de IA principal
-│   ├── 📁 data/
-│   │   └── knowledge_base.json # Base de conocimiento
-│   └── config.py              # Configuraciones y credenciales
-├── 📁 docs/                   # Documentación adicional
-├── 📁 tests/                  # Pruebas unitarias
-├── requirements.txt           # Dependencias
-├── run.py                    # Punto de entrada principal
-├── chatbot_operations.log    # Log generado automáticamente
-└── README.md                 # Este archivo
+├── run.py                     # Punto de entrada: valida .env → ChatbotEngine → GreenAPIBot → register_handlers
+├── scripts/
+│   └── repl_local.py          # REPL local de pruebas (sin WhatsApp)
+├── app/
+│   ├── config.py              # Carga .env; credenciales, umbrales y rutas de inventario
+│   ├── handlers/
+│   │   └── message_handler.py # register_handlers(): ruteo de comandos + menu + fallback IA
+│   ├── services/
+│   │   ├── chatbot_engine.py  # TF-IDF + cosine similarity, fallback RapidFuzz
+│   │   ├── inventory_service.py # buscar_producto(): SQLite o CSV con fuzzy matching
+│   │   ├── message_processor.py  # Logica de mensajes y maquina de estados
+│   │   └── state_manager.py   # Estado por usuario en memoria (3 estados)
+│   ├── utils/
+│   │   └── logger.py          # Logging centralizado (chatbot_operations.log + stdout)
+│   └── data/
+│       ├── knowledge_base.json # Base de conocimiento (JSON)
+│       ├── inventory.db        # Inventario SQLite (tabla `productos`)
+│       └── inventory.csv       # Inventario CSV de respaldo
+├── tests/                     # Suite pytest (39 pruebas)
+├── .context/                  # Documentacion de diseno (CONTEXT, ROADMAP, STATE, DECISIONS, PATTERNS, WORKFLOW)
+├── .env.example               # Plantilla de configuración
+├── requirements.txt
+└── README.md
 ```
 
-### Base de Conocimiento (`knowledge_base.json`)
+### Base de conocimiento (`knowledge_base.json`)
+
 ```json
 {
   "conocimiento": [
     {
       "pregunta_base": "hola",
-      "respuesta": "¡Hola! Soy tu bot asistente.",
+      "respuesta": "¡Hola! Soy tu asistente virtual. ¿En qué puedo ayudarte?",
       "sinonimos": ["saludos", "buenas", "qué tal"]
     }
   ]
 }
 ```
 
-## 🔮 Roadmap y Mejoras Futuras
+## Configuracion de Inventario
 
-### 🚀 **Mejoras Técnicas (Backend)**
-| Prioridad | Mejora | Descripción | Impacto |
-|-----------|--------|-------------|---------|
-| Alta | **Validación de Estado de Instancia** | Verificar automáticamente que la instancia de Green-API esté `authorized` antes de iniciar. | Evita errores silenciosos y mejora la experiencia de desarrollo. |
-| Alta | **Umbrales Dinámicos Configurables** | Mover umbrales de confianza (0.3) y fuzzy (70) a `config.py` para ajuste fácil. | Mayor flexibilidad sin modificar código. |
-| Media | **Sistema de Caché de Embeddings** | Cachear vectores TF-IDF de preguntas frecuentes para reducir procesamiento. | Mejora rendimiento en despliegues con muchos usuarios. |
-| Media | **Métricas de Rendimiento en Tiempo Real** | Contadores para éxitos/fallos de TF-IDF vs Fuzzy, confianza promedio, etc. | Mejor monitorización y toma de decisiones. |
+El inventario vive en `app/data/inventory.db` (SQLite, default) o `app/data/inventory.csv`, con columnas `nombre`, `precio`, `stock`. Cambia la fuente activa con `INVENTORY_SOURCE_TYPE`:
 
-### ✨ **Mejoras de Experiencia de Usuario (UX)**
-| Prioridad | Mejora | Descripción | Beneficio |
-|-----------|--------|-------------|-----------|
-| Alta | **Respuestas Humanizadas con Variaciones** | Múltiples respuestas por intención y selección aleatoria. | Evita respuestas robóticas y repetitivas. |
-| Alta | **Manejo de Contexto Multi-Turno** | Recordar la última intención para diálogos como "¿su precio?" → "del producto X". | Conversaciones más naturales y útiles. |
-| Media | **Soporte para Comandos Específicos** | Comandos como `/ayuda`, `/info`, `/reset`. | Interfaz más intuitiva y descubrible. |
-| Media | **Sistema de Feedback de Respuestas** | Opción "¿Fue útil esta respuesta?" para aprender de interacciones reales. | Mejora continua basada en datos reales. |
-| Baja | **Soporte para Multimedia** | Manejo básico de imágenes/audios con respuestas predefinidas. | Mayor interactividad. |
-
-### 🧩 **Mejoras de Extensibilidad**
-| Prioridad | Mejora | Descripción | Uso Caso |
-|-----------|--------|-------------|----------|
-| Media | **Sistema de Plugins/Extensiones** | Arquitectura para añadir módulos (clima, cotizaciones, etc.) sin tocar el núcleo. | Facilita colaboración y características adicionales. |
-| Media | **API REST para Administración** | Endpoints para añadir/eliminar preguntas-respuestas en caliente. | Administración remota sin reinicios. |
-| Baja | **Interfaz Web de Administración** | Panel web para ver logs, métricas y editar la base de conocimiento. | Mejor experiencia de administración. |
-
-### 🧪 **Ejemplo de Implementación: Respuestas Humanizadas**
-```json
-{
-  "pregunta_base": "hola",
-  "respuestas": [
-    "¡Hola! Soy tu bot asistente. ¿En qué puedo ayudarte?",
-    "¡Hola! Qué gusto saludarte. ¿Cómo estás?",
-    "¡Buenas! Estoy aquí para ayudarte."
-  ],
-  "sinonimos": ["saludos", "buenas", "qué tal"]
-}
+```dotenv
+INVENTORY_SOURCE_TYPE="csv"
 ```
 
-```python
-# En engine.py, método responder()
-import random
-# ...
-if respuesta:
-    if isinstance(respuesta, list):  # Múltiples respuestas disponibles
-        respuesta_elegida = random.choice(respuesta)
-        self.logger.info(f"Seleccionada respuesta variante #{respuestas.index(respuesta_elegida)}")
-        return respuesta_elegida
-```
+La busqueda usa un scorer combinado (WRatio + partial_ratio) que tolera errores tipograficos y consultas parciales ("cargador tipo c" encuentra "Cargador Tipo C Rapido"), con umbral configurable en `FUZZY_THRESHOLD`.
 
-## 📊 Estado del Proyecto
+## Estado del Proyecto
 
-**Estable - Listo para Producción (Pequeña Escala)**
+**Estable para pruebas y produccion a pequena escala** (con credenciales Green-API reales).
 
-El bot está completamente funcional y ha sido probado con:
-- ✅ Clasificación precisa de intenciones con TF-IDF
-- ✅ Manejo robusto de errores tipográficos con Fuzzy Matching
-- ✅ Integración estable con WhatsApp vía Green-API
-- ✅ Logging completo para monitorización
+- Suites de tests completas y en verde (39 pruebas)
+- Flujo completo verificado con REPL local (menu, stock, precio, IA)
+- Inventario funcional con SQLite y CSV
 
-**Limitaciones Conocidas:**
-- El plan Developer de Green-API permite solo 3 chats simultáneos
-- Procesamiento de lenguaje natural en español básico (sin modelos transformer)
-- Sin persistencia de conversaciones entre reinicios
+**Limitaciones conocidas:**
 
-## 🤝 Contribuir
+- La conversacion se mantiene solo en memoria: los estados se reinician si el proceso se detiene
+- La base de conocimiento se carga al inicio: editar `knowledge_base.json` exige reiniciar
+- El plan Developer de Green-API permite pocos chats simultaneos
+- Sin interfaz web ni API de administracion
 
-Las contribuciones son bienvenidas. Por favor:
+## Roadmap
 
-1. Haz fork del repositorio
-2. Crea una rama para tu funcionalidad (`git checkout -b feature/AmazingFeature`)
-3. Commitea tus cambios (`git commit -m 'Add some AmazingFeature'`)
-4. Push a la rama (`git push origin feature/AmazingFeature`)
-5. Abre un Pull Request
+- Validacion de estado de instancia en Green-API antes de iniciar (`authorized`)
+- Persistencia de conversaciones (estados multi-turno sobre SQLite/Redis)
+- Cache de vectores TF-IDF para reducir procesamiento
+- Metricas de rendimiento en tiempo real (exitos/fallos TF-IDF vs fuzzy)
+- Respuestas humanizadas con variaciones
+- Sistema de feedback de respuestas ("¿Fue util?")
+- API REST de administracion para editar la base de conocimiento en caliente (evitar reinicios)
 
-Consulta el archivo `CONTRIBUTING.md` para pautas detalladas.
+## Licencia
 
-## 📄 Licencia
-
-Este proyecto está bajo la Licencia MIT - ver el archivo [LICENSE](LICENSE) para detalles.
-
-## 🙏 Agradecimientos
-
-- **[Green-API](https://green-api.com/)** por proporcionar una API de WhatsApp accesible
-- **[Scikit-learn](https://scikit-learn.org/)** por las herramientas de ML
-- **[RapidFuzz](https://github.com/maxbachmann/RapidFuzz)** por la excelente librería de fuzzy matching
-
----
-
+MIT — ver [LICENSE](LICENSE).

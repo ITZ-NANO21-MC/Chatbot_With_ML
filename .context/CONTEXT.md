@@ -22,38 +22,43 @@ Objetivo de producto (según el plan en `Upgrade_sistema_inventario_chatbot.md`)
 | pytest-mock | >= 3.0.0 |
 | pylint | >= 3.0.0 (linter, ejecución manual) |
 
-## Estructura de Carpetas (real, el README está desactualizado)
+## Estructura de Carpetas (real, actualizada en rama `feat/local-testing-repl`)
 
 ```
 Chatbot_With_ML/
 ├── run.py                  → Punto de entrada: valida .env → ChatbotEngine → GreenAPIBot → register_handlers → run_forever()
+├── scripts/
+│   └── repl_local.py       → REPL local de pruebas (no requiere WhatsApp)
 ├── app/
 │   ├── config.py           → Carga .env desde la raíz; expone credenciales, umbrales y rutas (TFIDF_THRESHOLD, FUZZY_THRESHOLD, INVENTORY_SOURCE_TYPE)
 │   ├── handlers/
 │   │   └── message_handler.py → register_handlers(bot, engine): ruteo de comandos + menú por estados + fallback IA
 │   ├── services/
-│   │   ├── chatbot_engine.py  → ChatbotEngine: TF-IDF + cosine similarity, fallback RapidFuzz token_sort_ratio
-│   │   ├── inventory_service.py → buscar_producto(): fuente SQLite o CSV (INVENTORY_SOURCE_TYPE)
+│   │   ├── chatbot_engine.py  → ChatbotEngine: TF-IDF + cosine similarity, fallback RapidFuzz token_sort_ratio + WRatio
+│   │   ├── inventory_service.py → buscar_producto(): fuente SQLite o CSV; fuzzy combinado (WRatio + partial_ratio)
+│   │   ├── message_processor.py → procesar_mensaje(): lógica de mensajes y máquina de estados
 │   │   └── state_manager.py   → Estado por usuario en memoria (dict), 3 estados
 │   ├── utils/
 │   │   └── logger.py          → get_logger(name): escribe a chatbot_operations.log + stdout
 │   └── data/
 │       ├── knowledge_base.json → "conocimiento": [{pregunta_base, respuesta, sinonimos}]
-│       ├── inventory.db        → tabla `productos` (nombre, precio, stock)
+│       ├── inventory.db        → tabla `productos` (nombre, precio, stock) — sembrado con 4 productos
 │       └── inventory.csv       → columnas nombre, precio, stock
 ├── tests/
-│   ├── test_config.py      → ✅ Funciona (importa app.config)
-│   ├── test_engine.py      → ❌ ROTO (importa app.chatbot.engine; debe ser app.services.chatbot_engine)
-│   └── test_api.py         → ❌ ROTO (importa app.api.routes; debe ser app.handlers.message_handler)
+│   ├── test_config.py          → importa app.config
+│   ├── test_engine.py          → importa app.services.chatbot_engine
+│   ├── test_handlers.py        → test_api.py migrado; importa app.handlers.message_handler
+│   ├── test_message_processor.py → tests de procesar_mensaje (incl. flujo /stock y /precio)
+│   └── test_inventory_service.py → tests de buscar_producto en SQLite y CSV
 ├── requirements.txt
-├── .env / .env.example     → Credenciales Green-API + configuración
+├── .env / .env.example     → Credenciales Green-API + umbrales + configuración de inventario
 └── AGENTS.md               → Convenciones del proyecto (gitignored)
 ```
 
 ## Entidades de Datos Principales
 
-- **Base de conocimiento** — `app/data/knowledge_base.json`: array `conocimiento` con 5-14 preguntas expandidas. Entradas: `pregunta_base`, `respuesta`, `sinonimos` (list). Se carga al inicio; editar exige reinicio.
-- **Inventario** — tabla `productos` en `inventory.db` (SQLite) **o** `inventory.csv`: columnas `nombre`, `precio`, `stock`. La fuente activa la define `INVENTORY_SOURCE_TYPE` (`sqlite` por defecto).
+- **Base de conocimiento** — `app/data/knowledge_base.json`: array `conocimiento` con 5 entradas base expandidas (5 → 17 preguntas). Entradas: `pregunta_base`, `respuesta`, `sinonimos` (list). Se carga al inicio; editar exige reinicio.
+- **Inventario** — tabla `productos` en `inventory.db` (SQLite) **o** `inventory.csv`: columnas `nombre`, `precio`, `stock`. Fuente activa: `INVENTORY_SOURCE_TYPE` (`sqlite` por defecto). Búsqueda difusa combinada (WRatio + partial_ratio) sobre `FUZZY_SCORE_THRESHOLD` (70).
 - **Estado de conversación** — dict en memoria en `state_manager.py` keyed por `user_id` (teléfono). Estados: `MENU_PRINCIPAL`, `ESPERANDO_PRODUCTO_STOCK`, `ESPERANDO_PRODUCTO_PRECIO`. **Sin persistencia entre reinicios.**
 
 ## Reglas de Negocio Fijas
@@ -69,10 +74,10 @@ Chatbot_With_ML/
 
 ## Estado de Madurez
 
-- **Estable para producción a pequeña escala** (declarado en README, 85% cobertura declarada).
+- **Estable para producción a pequeña escala** (suite completa en verde: 45 pruebas; flujo verificado con REPL local).
 - Plan original Fases 0–4 **completadas** (estructura modular, comandos, menús, inventario multi-fuente).
-- Fases 5–7 pendientes (facturación, robustez/logs, despliegue como servicio).
-- Deuda técnica crítica: **tests rotos** (imports a módulos inexistentes tras el refactor `c4fb5fa`) y **README desactualizado**.
+- Fase 5 (estabilización) **completada**: tests reparados, `/stock`/`/precio` integrados con inventario real, fuzzy de inventario robustecido, state_manager thread-safe, recarga de knowledge base, README sincronizado.
+- Fases 6–8 pendientes (facturación, robustez/observabilidad, despliegue como servicio). Deuda técnica remanente: estados sin persistencia entre reinicios, conocimiento sin TTL de caché, sin límite de tamaño en el dict de estados (mejora opcional).
 
 ## Referencias
 
