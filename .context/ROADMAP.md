@@ -9,7 +9,7 @@
 | Fase 3 | ✅ Completada | Conversación con menús y gestión de estado por usuario (commit `4981dd7`). |
 | Fase 4 | ✅ Completada | Inventario multi-fuente SQLite/CSV (commit `b4aafb1`). |
 | Fase 5 | ✅ Completada | Estabilización y deuda técnica (tests verdes, mensajes coherentes, docs sincronizadas). |
-| Fase 6 | ⬜ Pendiente | Facturación y mensajes programados. |
+| Fase 6 | 🔨 **En curso** | Facturación y mensajes programados (módulos 6.1–6.3). |
 | Fase 7 | ⬜ Pendiente | Robustez, logs rotativos y reportes. |
 | Fase 8 | ⬜ Pendiente | Despliegue como servicio (systemd). |
 
@@ -33,7 +33,7 @@
 
 ---
 
-## Fase 6 — Facturación y Mensajes Programados (pendiente)
+## Fase 6 — Facturación y Mensajes Programados (en curso)
 
 **Objetivo:** Comando `/factura` que genere un PDF (reportlab) y job diario de recordatorios/recibos a usuarios activos. *(Referencia: Fase 5 del plan original.)*
 
