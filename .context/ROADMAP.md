@@ -11,7 +11,7 @@
 | Fase 5 | ✅ Completada | Estabilización y deuda técnica (tests verdes, mensajes coherentes, docs sincronizadas). |
 | Fase 6 | ✅ Completada | Facturación y mensajes programados (PDFs, `/factura`, recordatorios). |
 | Fase 7 | ✅ Completada | Robustez, logs rotativos y reportes. |
-| Fase 8 | ⬜ Pendiente | Despliegue como servicio (systemd). |
+| Fase 8 | 🔨 **En curso** | Despliegue como servicio (Linux `systemd` + Windows tarea programada). |
 
 ---
 
@@ -66,13 +66,15 @@
 
 ---
 
-## Fase 8 — Despliegue como Servicio (pendiente)
+## Fase 8 — Despliegue como Servicio (en curso)
 
-**Objetivo:** El bot arranca automáticamente al encender la máquina del cliente. *(Referencia: Fase 7 del plan original.)*
+**Objetivo:** El bot arranca automáticamente al encender la máquina del cliente y se recupera solo ante caídas. *(Referencia: Fase 7 del plan original.)* Detalle en `.context/plans/PLAN_FASE_8.md`.
 
 ### Módulos
-- [ ] `install.sh` que configure `systemd` (Linux) o tarea programada (Windows).
-- [ ] Documentación de operación 24/7 (`systemctl status chatbot`).
+- [x] **Planificación** — decisiones con el dueño: despliegue en **Linux (`systemd`) y Windows (tarea programada)**; servicio bajo **usuario dedicado `chatbot`**; `.env` **validado + copiado desde plantilla** (nunca credenciales reales). Rama `feat/despliegue-servicio`.
+- [ ] `scripts/install_linux.sh` — usuario `chatbot` sin login, venv + requirements, `.env` (chmod 600 + validación), unidad `chatbot.service` (`Restart=always`), `enable --now`, resumen de operación.
+- [ ] `scripts/install_windows.bat` — venv + requirements, `.env` validado, tarea programada con `schtasks` (arranque/inicio de sesión), idempotente.
+- [ ] `docs/DESPLEGUE.md` — operación 24/7 en Linux (systemctl/journalctl) y Windows (schtasks), actualización, log/rollback y seguridad de credenciales. **Crea el directorio `docs/`, que figuraba en el README histórico pero nunca existió.**
 
 ### Dependencias
 - Fases 6–7 completadas (funcionalidad estabilizada).

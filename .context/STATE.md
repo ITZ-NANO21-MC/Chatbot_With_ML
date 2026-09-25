@@ -2,26 +2,25 @@
 
 ## Estado Actual
 
-- **Fase actual:** Fase 7 — Robustez y Observabilidad.
-- **Módulo activo:** Cierre de Fase 7 (README, CONTEXT/DECISIONS, verificación y merge a `main`).
-- **Última acción:** Módulo 7.3 completado — `report_service.py` (envío por email SMTP con adjunto del log, STARTTLS/SSL, cierre garantizado) y comando `/reporte` restringido a `OWNER_PHONE` (sin config → desactivado; otro usuario → no autorizado). Config SMTP en `.env` con `.env.example` actualizado. Suite: **90 passed**.
-- **Siguiente acción:** cierre de la Fase 7: sincronizar README y `.context` (CONTEXT, DECISIONS con ADR-007/008), merge de `feat/robustez-observabilidad` a `main` con PR.
-- **Bloqueos:** Ninguno. Entorno de pruebas: venv `/home/nano/Documentos/dev-env` (Python 3.12.3, pytest 9.0.2).
-- **Cambios pendientes sin commitear:** código del 7.3 + `.context/` (STATE/PLAN_FASE_7).
+- **Fase actual:** Fase 8 — Despliegue como Servicio.
+- **Módulo activo:** Planificación de la Fase 8 (decisiones tomadas; scripts y docs pendientes de implementar).
+- **Última acción:** Plan Fase 8 definido — plataformas **Linux systemd + Windows tarea programada**; usuario del servicio **dedicado `chatbot`**; `.env` **validado + copiado desde plantilla**. Detalle en `.context/plans/PLAN_FASE_8.md`.
+- **Siguiente acción:** módulo 8.1 — `scripts/install_linux.sh` (unidad `chatbot.service`, usuario `chatbot`, venv, `.env` 600) y `scripts/install_windows.bat` (`schtasks`).
+- **Bloqueos:** Ninguno. Entorno de pruebas: venv `/home/nano/Documentos/dev-env` (Python 3.12.3, pytest 9.0.2). Prueba de sistema real requiere confirmación del dueño (crea usuario/servicio).
+- **Cambios pendientes sin commitear:** plan Fase 8 + `.context/` (STATE/ROADMAP).
 
-## Plan Fase 7 — Robustez y Observabilidad
+## Plan Fase 8 — Despliegue como Servicio
 
 | # | Tarea | Descripción | Estado |
 | :-- | :--- | :--- | :--- |
-| 7.1 | Reintentos en envíos | `app/utils/retry.py` (`con_reintentos`, backoff exp.), aplicado a `answer`/`answer_with_file` y `sendMessage` | ✅ Completado |
-| 7.2 | Logs rotativos | `RotatingFileHandler` en `logger.py` (`LOG_MAX_BYTES`, `LOG_BACKUP_COUNT`) | ✅ Completado |
-| 7.3 | Comando `/reporte` | Envía log por **email SMTP** al dueño (solo `OWNER_PHONE`); `report_service.py` + config SMTP | ✅ Completado |
+| 8.1 | Scripts de instalación | `install_linux.sh` (systemd + usuario `chatbot` + `.env` 600) y `install_windows.bat` (tarea programada) | ⬜ Pendiente |
+| 8.2 | Documentación de operación | `docs/DESPLEGUE.md` (Linux systemd + Windows, logs, actualización, rollback) | ⬜ Pendiente |
 
 ## Repositorio
 
-- **Rama:** `main` (`8b09965`, merge PR #2 Fase 6). Propuesta para Fase 7: `feat/robustez-observabilidad` (desde `main`).
+- **Rama:** `main` (`27c55b6`, merge PR #3 Fase 7). Propuesta para Fase 8: `feat/despliegue-servicio` (desde `main`).
 - **Remoto:** `origin` — ramas `main`, `feat/local-testing-repl`, `feature/standalone-chatbot`.
-- **Últimos commits (main):** `8b09965` (merge PR #2 Fase 6) → `f3591b0` (docs Fase 6) → `f43cb58` (recordatorios) → `57807f5` (/factura) → `2a20a30` (merge Fase 5).
+- **Últimos commits (main):** `27c55b6` (merge PR #3 Fase 7) → `6b666c6` (docs Fase 7) → `84d31b3` (/reporte) → `0367fd0` (logs rotativos) → `84d5dd8` (retries).
 
 ## Fases Completadas
 
