@@ -9,7 +9,9 @@ la infraestructura de Green-API, permitiendo pruebas locales.
 from dataclasses import dataclass
 from typing import Optional
 
+from app import config
 from app.services import state_manager, inventory_service, invoice_service
+from app.services import report_service
 from app.services.chatbot_engine import ChatbotEngine
 from app.utils.logger import get_logger
 
@@ -23,6 +25,7 @@ COMMAND_PRECIO = "/precio"
 COMMAND_CONTACTO = "/contacto"
 COMMAND_HORARIO = "/horario"
 COMMAND_FACTURA = "/factura"
+COMMAND_REPORTE = "/reporte"
 
 # --- Respuestas de Comandos ---
 WELCOME_MESSAGE = (
@@ -58,10 +61,17 @@ HELP_MESSAGE = (
     "/precio - Consultar precios\n"
     "/factura - Generar una factura en PDF\n"
     "/contacto - Ver información de contacto\n"
-    "/horario - Ver horario de atención\n\n"
+    "/horario - Ver horario de atención\n"
+    "/reporte - Enviar reporte de operaciones al dueño (solo dueño)\n\n"
     "También puedes escribirme cualquier pregunta y haré mi mejor esfuerzo "
     "para responderte. 🤖"
 )
+
+# --- Mensajes de reportes (Fase 7) ---
+REPORTE_DESACTIVADO = "⚠️ El reporte no está habilitado en este momento."
+REPORTE_NO_AUTORIZADO = "⚠️ Este comando está disponible solo para el dueño del negocio."
+REPORTE_ENVIADO = "✅ Reporte enviado al email del dueño."
+REPORTE_ERROR = "⚠️ No se pudo enviar el reporte por email. Intenta más tarde."
 
 # --- Mensajes de facturación (Fase 6) ---
 FACTURA_PROMPT_CLIENTE = (
@@ -152,6 +162,10 @@ def procesar_mensaje_con_archivo(
         state_manager.set_state(usuario, state_manager.STATE_ESPERANDO_DETALLE_FACTURA)
         state_manager.set_datos(usuario, {})
         return Respuesta(FACTURA_PROMPT_CLIENTE)
+
+    # --- Comando de reporte (solo el dueño) ---
+    if comando == COMMAND_REPORTE:
+        return _procesar_reporte(usuario)
 
     # --- Manejo de estados multi-turno ---
     estado_actual = state_manager.get_state(usuario)
@@ -278,3 +292,32 @@ def _procesar_factura(usuario: str, mensaje: str) -> Respuesta:
     state_manager.clear_datos(usuario)
     logger.info(f"Factura generada para {usuario}: {datos['cliente']}")
     return Respuesta(FACTURA_EXITO, archivo=ruta)
+
+
+def _procesar_reporte(usuario: str) -> Respuesta:
+    """Genera y envía el reporte por email, solo si lo solicita el dueño.
+
+    Args:
+        usuario (str): Identificador del usuario que envía el comando.
+
+    Returns:
+        Respuesta: Confirmación de envío o mensaje neutro si no procede.
+    """
+    if not config.OWNER_PHONE:
+        logger.info("Comando /reporte ignorado: OWNER_PHONE no configurado.")
+        return Respuesta(REPORTE_DESACTIVADO)
+
+    if usuario != config.OWNER_PHONE:
+        logger.warning(f"Comando /reporte de usuario no autorizado: {usuario}")
+        return Respuesta(REPORTE_NO_AUTORIZADO)
+
+    try:
+        report_service.enviar_reporte_email()
+    except Exception as e:
+        logger.error(
+            f"Error enviando reporte solicitado por {usuario}: {e}", exc_info=True
+        )
+        return Respuesta(REPORTE_ERROR)
+
+    logger.info(f"Reporte enviado por el dueño {usuario}.")
+    return Respuesta(REPORTE_ENVIADO)

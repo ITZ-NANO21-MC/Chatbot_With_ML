@@ -11,8 +11,12 @@ from typing import Any, Dict, List, Optional
 
 from app import config
 from app.utils.logger import get_logger
+from app.utils.retry import con_reintentos
 
 logger = get_logger(__name__)
+
+# Reintentos ante fallos transitorios de red en el envío de cada recordatorio.
+reintentar_envio = con_reintentos(intentos=3, retraso_base=1.0)
 
 RECORDATORIO_MENSAJE = (
     "📢 *Recordatorio*\n\n"
@@ -67,7 +71,7 @@ def enviar_recordatorios_diarios(bot: Any, registro_path: Optional[str] = None) 
     for cliente in clientes:
         chat_id = cliente["chat_id"]
         try:
-            bot.api.sending.sendMessage(chat_id, RECORDATORIO_MENSAJE)
+            reintentar_envio(bot.api.sending.sendMessage)(chat_id, RECORDATORIO_MENSAJE)
             enviados += 1
             logger.info(f"Recordatorio enviado a {chat_id}")
         except Exception as e:

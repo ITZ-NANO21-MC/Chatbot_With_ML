@@ -12,8 +12,12 @@ from whatsapp_chatbot_python import GreenAPIBot, Notification
 from app.services.chatbot_engine import ChatbotEngine
 from app.services.message_processor import procesar_mensaje_con_archivo
 from app.utils.logger import get_logger
+from app.utils.retry import con_reintentos
 
 logger = get_logger(__name__)
+
+# Reintentos ante fallos transitorios de red en los envíos de salida.
+reintentar_envio = con_reintentos(intentos=3, retraso_base=1.0)
 
 
 def register_handlers(bot: GreenAPIBot, engine: ChatbotEngine):
@@ -38,17 +42,19 @@ def register_handlers(bot: GreenAPIBot, engine: ChatbotEngine):
             respuesta = procesar_mensaje_con_archivo(engine, user_id, user_message)
             if respuesta:
                 if respuesta.archivo:
-                    notification.answer_with_file(
+                    reintentar_envio(notification.answer_with_file)(
                         respuesta.archivo,
                         file_name=os.path.basename(respuesta.archivo),
                         caption=respuesta.texto,
                     )
                 else:
-                    notification.answer(respuesta.texto)
+                    reintentar_envio(notification.answer)(respuesta.texto)
         except Exception as e:
             logger.error(f"Error procesando mensaje de {user_id}: {e}", exc_info=True)
             try:
-                notification.answer("⚠️ Ocurrió un error procesando tu mensaje. Por favor intenta de nuevo.")
+                reintentar_envio(notification.answer)(
+                    "⚠️ Ocurrió un error procesando tu mensaje. Por favor intenta de nuevo."
+                )
             except Exception:
                 logger.error("No se pudo enviar mensaje de error al usuario.", exc_info=True)
 

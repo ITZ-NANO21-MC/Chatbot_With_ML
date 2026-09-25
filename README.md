@@ -14,6 +14,8 @@ Chatbot para WhatsApp con **Machine Learning** que automatiza la atención al cl
 - **Inventario multi-fuente**: Consultas de stock y precio via `buscar_producto()`, con fuente configurable (`INVENTORY_SOURCE_TYPE=sqlite|csv`).
 - **Facturacion en PDF**: Comando `/factura` que recoge cliente, cedula/RIF, concepto y monto; genera el PDF con `reportlab` (numero correlativo persistente) y lo envia por WhatsApp (`answer_with_file`).
 - **Recordatorios programados**: Job diario (`threading.Timer` en `run.py`) que envia un recordatorio a los clientes registrados en `clientes.json`.
+- **Robustez**: Reintentos con backoff exponencial (`app/utils/retry.py`) en los envios de salida ante fallos transitorios de red.
+- **Observabilidad**: Logs en archivo rotativo por tamaño (`RotatingFileHandler`, `LOG_MAX_BYTES`/`LOG_BACKUP_COUNT`) y comando `/reporte` (solo el dueño) que envia el log por email via SMTP.
 - **Base de conocimiento externa**: Todo el conocimiento reside en `app/data/knowledge_base.json` (separacion dato/codigo).
 - **Arquitectura modular**: `handlers` (ruteo), `services` (motor IA, inventario, estados, facturas, notificaciones) y `utils` (logging), patrón "monolito mejorado".
 - **Testeo sin WhatsApp**: REPL local (`scripts/repl_local.py`) para probar el flujo completo de mensajes sin conectarse a Green-API.
@@ -100,6 +102,20 @@ graph TB
 
    # Notificaciones (Fase 6): registro de clientes para recordatorios
    CLIENTES_PATH="app/data/clientes.json"
+
+   # Reportes (Fase 7): /reporte por email al dueño (SMTP)
+   OWNER_PHONE=""              # WhatsApp chat id del dueño, ej. "5891...@c.us"
+   OWNER_EMAIL="dueno@correo.com"
+   SMTP_HOST="smtp.gmail.com"
+   SMTP_PORT=587               # 465 si usas SMTP_SSL=true
+   SMTP_USER="cuenta@correo.com"
+   SMTP_PASSWORD="password"
+   SMTP_FROM="cuenta@correo.com"   # remitente (default: SMTP_USER)
+   SMTP_SSL=false              # 'true' para SMTP_SSL (puerto 465)
+
+   # Logging rotativo (Fase 7)
+   LOG_MAX_BYTES=5242880       # 5 MB por archivo
+   LOG_BACKUP_COUNT=3          # respaldos a conservar
    ```
 
    El proyecto no arranca sin credenciales validas: `ID_INSTANCE` y `API_TOKEN_INSTANCE` se validan antes de conectar con Green-API.
@@ -149,9 +165,10 @@ Ejecutar el REPL **no** conecta con Green-API: procesa los mensajes con el mismo
 | `/ayuda` | Mostrar lista de comandos |
 | `/contacto` | Información de contacto |
 | `/horario` | Horarios de atención |
+| `/reporte` | Enviar reporte de operaciones por email (solo el dueño) |
 | cualquier texto | IA: TF-IDF + cosine similarity, con fallback fuzzy |
 
-Tras `/factura`, el bot guía por 4 pasos (cliente → cédula/RIF → concepto → monto) y entrega el PDF generado. El monto acepta `.` o `,` como separador decimal.
+Tras `/factura`, el bot guía por 4 pasos (cliente → cédula/RIF → concepto → monto) y entrega el PDF generado. El monto acepta `.` o `,` como separador decimal. `/reporte` solo responde al `OWNER_PHONE` configurado y envía el log actual (`chatbot_operations.log`, o su respaldo rotativo más reciente) al `OWNER_EMAIL`.
 
 ## Pruebas (Testing)
 
@@ -161,7 +178,7 @@ El proyecto usa `pytest`. Ejecuta desde la raiz con las dependencias instaladas:
 pytest
 ```
 
-Suite actual: **69 pruebas** (motor de IA, procesador de mensajes, handlers, config, inventario SQLite/CSV, thread-safety de estados, recarga de conocimiento, facturación PDF, notificaciones e integración de flujos).
+Suite actual: **90 pruebas** (motor de IA, procesador de mensajes, handlers, config, inventario SQLite/CSV, thread-safety de estados, recarga de conocimiento, facturación PDF, notificaciones, reintentos, logs rotativos, reportes por email e integración de flujos).
 
 ## Estructura del Proyecto
 
@@ -180,16 +197,18 @@ Chatbot_With_ML/
 │   │   ├── message_processor.py  # Logica de mensajes y maquina de estados
 │   │   ├── state_manager.py   # Estado y datos por usuario en memoria (thread-safe, RLock)
 │   │   ├── invoice_service.py # Generacion de facturas PDF + contador correlativo
-│   │   └── scheduled_notifications.py # Recordatorio diario a clientes registrados
+│   │   ├── scheduled_notifications.py # Recordatorio diario a clientes registrados
+│   │   └── report_service.py  # /reporte: envio del log por email (SMTP)
 │   ├── utils/
-│   │   └── logger.py          # Logging centralizado (chatbot_operations.log + stdout)
+│   │   ├── logger.py          # Logging centralizado (rotativo + stdout)
+│   │   └── retry.py           # Reintentos con backoff exponencial
 │   └── data/
 │       ├── knowledge_base.json # Base de conocimiento (JSON)
 │       ├── inventory.db        # Inventario SQLite (tabla `productos`)
 │       ├── inventory.csv       # Inventario CSV de respaldo
 │       ├── facturas/           # PDFs generados + contador.json (gitignored)
 │       └── clientes.json       # Registro de clientes para recordatorios (gitignored)
-├── tests/                     # Suite pytest (69 pruebas)
+├── tests/                     # Suite pytest (90 pruebas)
 ├── .context/                  # Documentacion de diseno (CONTEXT, ROADMAP, STATE, DECISIONS, PATTERNS, WORKFLOW)
 ├── .env.example               # Plantilla de configuración
 ├── requirements.txt
@@ -224,10 +243,11 @@ La busqueda usa un scorer combinado (WRatio + partial_ratio) que tolera errores 
 
 **Estable para pruebas y produccion a pequena escala** (con credenciales Green-API reales).
 
-- Suites de tests completas y en verde (69 pruebas)
+- Suites de tests completas y en verde (90 pruebas)
 - Flujo completo verificado con REPL local (menu, stock, precio, IA y flujo de factura)
 - Inventario funcional con SQLite y CSV
 - Facturación en PDF (`/factura`) con envío por WhatsApp y recordatorios programados diarios
+- Reintentos ante fallos transitorios de red, logs rotativos y `/reporte` por email
 
 **Limitaciones conocidas:**
 
