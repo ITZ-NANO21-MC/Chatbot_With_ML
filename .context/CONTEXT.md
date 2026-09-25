@@ -4,7 +4,7 @@
 
 **Chatbot_With_ML** es un chatbot para WhatsApp con Machine Learning que automatiza la atención al cliente de una PYME. Comprende lenguaje natural en español mediante un **motor de IA híbrido**: el camino principal usa **TF-IDF + similitud de coseno** sobre una base de conocimiento expandida con sinónimos, y el camino de respaldo usa **RapidFuzz (fuzzy matching)** para tolerar errores tipográficos.
 
-El bot se conecta a WhatsApp vía la API de **Green-API**, responde comandos (`/start`, `/ayuda`, `/stock`, `/precio`, `/contacto`, `/horario`), gestiona un **menú de conversación por estados** y resuelve consultas de **stock y precios** leyendo un inventario local con fuentes intercambiables (SQLite o CSV).
+El bot se conecta a WhatsApp vía la API de **Green-API**, responde comandos (`/start`, `/ayuda`, `/stock`, `/precio`, `/contacto`, `/horario`, `/factura`), gestiona un **menú de conversación por estados** y resuelve consultas de **stock y precios** leyendo un inventario local con fuentes intercambiables (SQLite o CSV). Además genera **facturas en PDF** (`/factura`, con `reportlab`) y envía **recordatorios programados** diarios a clientes registrados.
 
 Objetivo de producto (según el plan en `Upgrade_sistema_inventario_chatbot.md`): entregar un **chatbot autónomo vendible a PYMEs** para facturación, consultas y automatización de atención.
 
@@ -30,26 +30,33 @@ Chatbot_With_ML/
 ├── scripts/
 │   └── repl_local.py       → REPL local de pruebas (no requiere WhatsApp)
 ├── app/
-│   ├── config.py           → Carga .env desde la raíz; expone credenciales, umbrales y rutas (TFIDF_THRESHOLD, FUZZY_THRESHOLD, INVENTORY_SOURCE_TYPE)
+│   ├── config.py           → Carga .env desde la raíz; expone credenciales, umbrales y rutas (TFIDF_THRESHOLD, FUZZY_THRESHOLD, INVENTORY_SOURCE_TYPE, NEGOCIO_NOMBRE, FACTURAS_PATH, CLIENTES_PATH)
 │   ├── handlers/
-│   │   └── message_handler.py → register_handlers(bot, engine): ruteo de comandos + menú por estados + fallback IA
+│   │   └── message_handler.py → register_handlers(bot, engine): ruteo de comandos + menú por estados + fallback IA + envío de PDFs
 │   ├── services/
 │   │   ├── chatbot_engine.py  → ChatbotEngine: TF-IDF + cosine similarity, fallback RapidFuzz token_sort_ratio + WRatio
 │   │   ├── inventory_service.py → buscar_producto(): fuente SQLite o CSV; fuzzy combinado (WRatio + partial_ratio)
-│   │   ├── message_processor.py → procesar_mensaje(): lógica de mensajes y máquina de estados
-│   │   └── state_manager.py   → Estado por usuario en memoria (dict), 3 estados
+│   │   ├── message_processor.py → procesar_mensaje()/procesar_mensaje_con_archivo(): lógica de mensajes y máquina de estados (Respuesta(texto, archivo))
+│   │   ├── state_manager.py   → Estado y datos por usuario en memoria (dict, thread-safe con RLock; 4 estados)
+│   │   ├── invoice_service.py → generar_factura(FacturaDatos) → PDF en app/data/facturas/ + contador correlativo
+│   │   └── scheduled_notifications.py → enviar_recordatorios_diarios(bot) vía sendMessage
 │   ├── utils/
 │   │   └── logger.py          → get_logger(name): escribe a chatbot_operations.log + stdout
 │   └── data/
 │       ├── knowledge_base.json → "conocimiento": [{pregunta_base, respuesta, sinonimos}]
 │       ├── inventory.db        → tabla `productos` (nombre, precio, stock) — sembrado con 4 productos
-│       └── inventory.csv       → columnas nombre, precio, stock
+│       ├── inventory.csv       → columnas nombre, precio, stock
+│       ├── facturas/           → PDFs generados + contador.json (gitignored)
+│       └── clientes.json       → registro de clientes para recordatorios (gitignored)
 ├── tests/
 │   ├── test_config.py          → importa app.config
 │   ├── test_engine.py          → importa app.services.chatbot_engine
 │   ├── test_handlers.py        → test_api.py migrado; importa app.handlers.message_handler
-│   ├── test_message_processor.py → tests de procesar_mensaje (incl. flujo /stock y /precio)
-│   └── test_inventory_service.py → tests de buscar_producto en SQLite y CSV
+│   ├── test_message_processor.py → tests de procesar_mensaje (incl. flujo /stock, /precio y /factura)
+│   ├── test_inventory_service.py → tests de buscar_producto en SQLite y CSV
+│   ├── test_state_manager.py   → thread-safety de estados y datos
+│   ├── test_invoice_service.py → tests de generación de facturas PDF
+│   └── test_scheduled_notifications.py → tests de recordatorios programados
 ├── requirements.txt
 ├── .env / .env.example     → Credenciales Green-API + umbrales + configuración de inventario
 └── AGENTS.md               → Convenciones del proyecto (gitignored)
@@ -59,7 +66,9 @@ Chatbot_With_ML/
 
 - **Base de conocimiento** — `app/data/knowledge_base.json`: array `conocimiento` con 5 entradas base expandidas (5 → 17 preguntas). Entradas: `pregunta_base`, `respuesta`, `sinonimos` (list). Se carga al inicio; editar exige reinicio.
 - **Inventario** — tabla `productos` en `inventory.db` (SQLite) **o** `inventory.csv`: columnas `nombre`, `precio`, `stock`. Fuente activa: `INVENTORY_SOURCE_TYPE` (`sqlite` por defecto). Búsqueda difusa combinada (WRatio + partial_ratio) sobre `FUZZY_SCORE_THRESHOLD` (70).
-- **Estado de conversación** — dict en memoria en `state_manager.py` keyed por `user_id` (teléfono). Estados: `MENU_PRINCIPAL`, `ESPERANDO_PRODUCTO_STOCK`, `ESPERANDO_PRODUCTO_PRECIO`. **Sin persistencia entre reinicios.**
+- **Estado de conversación** — dict en memoria en `state_manager.py` keyed por `user_id` (teléfono). Estados: `MENU_PRINCIPAL`, `ESPERANDO_PRODUCTO_STOCK`, `ESPERANDO_PRODUCTO_PRECIO`, `ESPERANDO_DETALLE_FACTURA`. Datos acumulados por usuario (`get_datos`/`set_datos`/`clear_datos`). Acceso protegido con `threading.RLock`. **Sin persistencia entre reinicios.**
+- **Facturas** — `app/services/invoice_service.py`: `FacturaDatos(cliente, cedula_rif, concepto, monto, fecha)` → PDF en `app/data/facturas/` (gitignored), número correlativo persistido en `contador.json`. `NEGOCIO_NOMBRE` en el encabezado.
+- **Clientes para recordatorios** — `app/data/clientes.json` (gitignored): lista `[{"chat_id": "...@c.us", "nombre": "..."}]`. `scheduled_notifications.enviar_recordatorios_diarios(bot)` envía el recordatorio a cada `chat_id` vía `sendMessage`, reprogramable con `threading.Timer` en `run.py`.
 
 ## Reglas de Negocio Fijas
 
@@ -74,10 +83,11 @@ Chatbot_With_ML/
 
 ## Estado de Madurez
 
-- **Estable para producción a pequeña escala** (suite completa en verde: 45 pruebas; flujo verificado con REPL local).
+- **Estable para producción a pequeña escala** (suite completa en verde: 69 pruebas; flujo verificado con REPL local y factura real generada).
 - Plan original Fases 0–4 **completadas** (estructura modular, comandos, menús, inventario multi-fuente).
 - Fase 5 (estabilización) **completada**: tests reparados, `/stock`/`/precio` integrados con inventario real, fuzzy de inventario robustecido, state_manager thread-safe, recarga de knowledge base, README sincronizado.
-- Fases 6–8 pendientes (facturación, robustez/observabilidad, despliegue como servicio). Deuda técnica remanente: estados sin persistencia entre reinicios, conocimiento sin TTL de caché, sin límite de tamaño en el dict de estados (mejora opcional).
+- Fase 6 (facturación y recordatorios) **completada**: PDFs con `reportlab` + contador correlativo, comando `/factura` en 4 pasos con envío del PDF (`Respuesta(texto, archivo)`), recordatorios diarios con `threading.Timer`, registro de clientes gitignored.
+- Fases 7–8 pendientes (robustez/observabilidad, despliegue como servicio). Deuda técnica remanente: estados sin persistencia entre reinicios, conocimiento sin TTL de caché, sin límite de tamaño en el dict de estados (mejora opcional), conversaciones y facturas sin retención/privacy policy documentada.
 
 ## Referencias
 

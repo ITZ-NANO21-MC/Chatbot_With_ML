@@ -9,7 +9,7 @@
 | Fase 3 | ✅ Completada | Conversación con menús y gestión de estado por usuario (commit `4981dd7`). |
 | Fase 4 | ✅ Completada | Inventario multi-fuente SQLite/CSV (commit `b4aafb1`). |
 | Fase 5 | ✅ Completada | Estabilización y deuda técnica (tests verdes, mensajes coherentes, docs sincronizadas). |
-| Fase 6 | 🔨 **En curso** | Facturación y mensajes programados (módulos 6.1–6.3). |
+| Fase 6 | ✅ Completada | Facturación y mensajes programados (PDFs, `/factura`, recordatorios). |
 | Fase 7 | ⬜ Pendiente | Robustez, logs rotativos y reportes. |
 | Fase 8 | ⬜ Pendiente | Despliegue como servicio (systemd). |
 
@@ -33,14 +33,16 @@
 
 ---
 
-## Fase 6 — Facturación y Mensajes Programados (en curso)
+## Fase 6 — Facturación y Mensajes Programados (completada)
 
-**Objetivo:** Comando `/factura` que genere un PDF (reportlab) y job diario de recordatorios/recibos a usuarios activos. *(Referencia: Fase 5 del plan original.)*
+**Objetivo:** Comando `/factura` que genere un PDF (reportlab) y job diario de recordatorios a usuarios activos. *(Referencia: Fase 5 del plan original.)*
 
 ### Módulos
-- [ ] `app/services/invoice_service.py` — generación de PDF.
-- [ ] Comando `/factura` en `message_handler.py` con envío de documento por WhatsApp.
-- [ ] Job diario de recordatorios a usuarios activos.
+- [x] `app/services/invoice_service.py` — generación de PDF con `reportlab` (5.0.1), número correlativo persistido en `contador.json`, validaciones → `ValueError`. Tests: `tests/test_invoice_service.py`. *(commit `c979e3b`)*
+- [x] Comando `/factura` — flujo por estados de 4 pasos (cliente → cédula/RIF → concepto → monto) en `message_processor.py`; respuesta estructurada `Respuesta(texto, archivo)`; envío del PDF con `answer_with_file` en `message_handler.py`. Tests: `tests/test_message_processor.py`, `tests/test_handlers.py`. *(commit `57807f5`)*
+- [x] Job diario de recordatorios — `scheduled_notifications.py` envía vía `sendMessage` a `clientes.json` (gitignored); disparador `threading.Timer` de 24 h en `run.py`. Tests: `tests/test_scheduled_notifications.py`. *(commit `f43cb58`)*
+
+**Cierre:** Suite completa: **69 pruebas en verde**. Flujo de factura verificado con PDF real (factura_0002.pdf). Rama: `feat/facturacion`.
 
 ### Dependencias
 - Fase 5 completada (tests verdes, base estable).

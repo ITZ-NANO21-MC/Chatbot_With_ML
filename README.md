@@ -5,15 +5,17 @@
 [![RapidFuzz](https://img.shields.io/badge/rapidfuzz-3.0%2B-brightgreen)](https://github.com/maxbachmann/RapidFuzz)
 [![Green-API](https://img.shields.io/badge/Green--API-Compatible-brightgreen)](https://green-api.com/)
 
-Chatbot para WhatsApp con **Machine Learning** que automatiza la atención al cliente de una PYME. Comprende lenguaje natural en español mediante un **motor de IA híbrido** (TF-IDF + similitud de coseno con respaldo de fuzzy matching), gestiona un **menú de conversación por estados** y resuelve consultas de **stock y precios** contra un inventario local intercambiable (SQLite o CSV).
+Chatbot para WhatsApp con **Machine Learning** que automatiza la atención al cliente de una PYME. Comprende lenguaje natural en español mediante un **motor de IA híbrido** (TF-IDF + similitud de coseno con respaldo de fuzzy matching), gestiona un **menú de conversación por estados**, resuelve consultas de **stock y precios** contra un inventario local intercambiable (SQLite o CSV), y genera **facturas en PDF** (`/factura`) que se envían directamente por WhatsApp.
 
 ## Caracteristicas Principales
 
 - **Motor de IA hibrido**: Camino principal con **TF-IDF + similitud de coseno** sobre una base de conocimiento expandida con sinonimos; camino de respaldo con **RapidFuzz** para tolerar errores tipograficos y consultas parciales.
-- **Menu por estados**: Menu conversacional con estados (`MENU_PRINCIPAL`, `ESPERANDO_PRODUCTO_STOCK`, `ESPERANDO_PRODUCTO_PRECIO`) gestionados en memoria.
+- **Menu por estados**: Menu conversacional con estados (`MENU_PRINCIPAL`, `ESPERANDO_PRODUCTO_STOCK`, `ESPERANDO_PRODUCTO_PRECIO`, `ESPERANDO_DETALLE_FACTURA`) gestionados en memoria de forma thread-safe.
 - **Inventario multi-fuente**: Consultas de stock y precio via `buscar_producto()`, con fuente configurable (`INVENTORY_SOURCE_TYPE=sqlite|csv`).
+- **Facturacion en PDF**: Comando `/factura` que recoge cliente, cedula/RIF, concepto y monto; genera el PDF con `reportlab` (numero correlativo persistente) y lo envia por WhatsApp (`answer_with_file`).
+- **Recordatorios programados**: Job diario (`threading.Timer` en `run.py`) que envia un recordatorio a los clientes registrados en `clientes.json`.
 - **Base de conocimiento externa**: Todo el conocimiento reside en `app/data/knowledge_base.json` (separacion dato/codigo).
-- **Arquitectura modular**: `handlers` (ruteo), `services` (motor IA, inventario, estados) y `utils` (logging), patrón "monolito mejorado".
+- **Arquitectura modular**: `handlers` (ruteo), `services` (motor IA, inventario, estados, facturas, notificaciones) y `utils` (logging), patrón "monolito mejorado".
 - **Testeo sin WhatsApp**: REPL local (`scripts/repl_local.py`) para probar el flujo completo de mensajes sin conectarse a Green-API.
 
 ## Arquitectura del Sistema
@@ -91,6 +93,13 @@ graph TB
    INVENTORY_SOURCE_TYPE="sqlite"
    INVENTORY_SQLITE_PATH="app/data/inventory.db"
    INVENTORY_CSV_PATH="app/data/inventory.csv"
+
+   # Facturación (Fase 6)
+   NEGOCIO_NOMBRE="Mi Negocio"
+   FACTURAS_PATH="app/data/facturas"
+
+   # Notificaciones (Fase 6): registro de clientes para recordatorios
+   CLIENTES_PATH="app/data/clientes.json"
    ```
 
    El proyecto no arranca sin credenciales validas: `ID_INSTANCE` y `API_TOKEN_INSTANCE` se validan antes de conectar con Green-API.
@@ -136,10 +145,13 @@ Ejecutar el REPL **no** conecta con Green-API: procesa los mensajes con el mismo
 | `2` (menú) / `/precio` | Consultar precio de un producto (pide el nombre) |
 | `3` | Información de contacto y horario |
 | `4` | Hablar con el asistente inteligente (IA) |
+| `/factura` | Generar una factura en PDF (pide cliente, cédula/RIF, concepto y monto) y enviarla |
 | `/ayuda` | Mostrar lista de comandos |
 | `/contacto` | Información de contacto |
 | `/horario` | Horarios de atención |
 | cualquier texto | IA: TF-IDF + cosine similarity, con fallback fuzzy |
+
+Tras `/factura`, el bot guía por 4 pasos (cliente → cédula/RIF → concepto → monto) y entrega el PDF generado. El monto acepta `.` o `,` como separador decimal.
 
 ## Pruebas (Testing)
 
@@ -149,7 +161,7 @@ El proyecto usa `pytest`. Ejecuta desde la raiz con las dependencias instaladas:
 pytest
 ```
 
-Suite actual: **39 pruebas** (motor de IA, procesador de mensajes, handlers, config, inventario SQLite/CSV e integración de flujos).
+Suite actual: **69 pruebas** (motor de IA, procesador de mensajes, handlers, config, inventario SQLite/CSV, thread-safety de estados, recarga de conocimiento, facturación PDF, notificaciones e integración de flujos).
 
 ## Estructura del Proyecto
 
@@ -159,21 +171,25 @@ Chatbot_With_ML/
 ├── scripts/
 │   └── repl_local.py          # REPL local de pruebas (sin WhatsApp)
 ├── app/
-│   ├── config.py              # Carga .env; credenciales, umbrales y rutas de inventario
+│   ├── config.py              # Carga .env; credenciales, umbrales, rutas de inventario/facturas/clientes
 │   ├── handlers/
-│   │   └── message_handler.py # register_handlers(): ruteo de comandos + menu + fallback IA
+│   │   └── message_handler.py # register_handlers(): ruteo + menu + fallback IA + envío de PDFs
 │   ├── services/
 │   │   ├── chatbot_engine.py  # TF-IDF + cosine similarity, fallback RapidFuzz
 │   │   ├── inventory_service.py # buscar_producto(): SQLite o CSV con fuzzy matching
 │   │   ├── message_processor.py  # Logica de mensajes y maquina de estados
-│   │   └── state_manager.py   # Estado por usuario en memoria (3 estados)
+│   │   ├── state_manager.py   # Estado y datos por usuario en memoria (thread-safe, RLock)
+│   │   ├── invoice_service.py # Generacion de facturas PDF + contador correlativo
+│   │   └── scheduled_notifications.py # Recordatorio diario a clientes registrados
 │   ├── utils/
 │   │   └── logger.py          # Logging centralizado (chatbot_operations.log + stdout)
 │   └── data/
 │       ├── knowledge_base.json # Base de conocimiento (JSON)
 │       ├── inventory.db        # Inventario SQLite (tabla `productos`)
-│       └── inventory.csv       # Inventario CSV de respaldo
-├── tests/                     # Suite pytest (39 pruebas)
+│       ├── inventory.csv       # Inventario CSV de respaldo
+│       ├── facturas/           # PDFs generados + contador.json (gitignored)
+│       └── clientes.json       # Registro de clientes para recordatorios (gitignored)
+├── tests/                     # Suite pytest (69 pruebas)
 ├── .context/                  # Documentacion de diseno (CONTEXT, ROADMAP, STATE, DECISIONS, PATTERNS, WORKFLOW)
 ├── .env.example               # Plantilla de configuración
 ├── requirements.txt
@@ -208,14 +224,15 @@ La busqueda usa un scorer combinado (WRatio + partial_ratio) que tolera errores 
 
 **Estable para pruebas y produccion a pequena escala** (con credenciales Green-API reales).
 
-- Suites de tests completas y en verde (39 pruebas)
-- Flujo completo verificado con REPL local (menu, stock, precio, IA)
+- Suites de tests completas y en verde (69 pruebas)
+- Flujo completo verificado con REPL local (menu, stock, precio, IA y flujo de factura)
 - Inventario funcional con SQLite y CSV
+- Facturación en PDF (`/factura`) con envío por WhatsApp y recordatorios programados diarios
 
 **Limitaciones conocidas:**
 
 - La conversacion se mantiene solo en memoria: los estados se reinician si el proceso se detiene
-- La base de conocimiento se carga al inicio: editar `knowledge_base.json` exige reiniciar
+- La base de conocimiento se carga al inicio: editar `knowledge_base.json` exige reiniciar (existe `recargar_conocimiento()`)
 - El plan Developer de Green-API permite pocos chats simultaneos
 - Sin interfaz web ni API de administracion
 
