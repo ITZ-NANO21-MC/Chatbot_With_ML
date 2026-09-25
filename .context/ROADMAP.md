@@ -10,7 +10,7 @@
 | Fase 4 | ✅ Completada | Inventario multi-fuente SQLite/CSV (commit `b4aafb1`). |
 | Fase 5 | ✅ Completada | Estabilización y deuda técnica (tests verdes, mensajes coherentes, docs sincronizadas). |
 | Fase 6 | ✅ Completada | Facturación y mensajes programados (PDFs, `/factura`, recordatorios). |
-| Fase 7 | ⬜ Pendiente | Robustez, logs rotativos y reportes. |
+| Fase 7 | 🔨 **En curso** | Robustez, logs rotativos y reportes. |
 | Fase 8 | ⬜ Pendiente | Despliegue como servicio (systemd). |
 
 ---
@@ -49,11 +49,12 @@
 
 ---
 
-## Fase 7 — Robustez y Observabilidad (pendiente)
+## Fase 7 — Robustez y Observabilidad (en curso)
 
-**Objetivo:** Reintentos ante errores de red en la API, logs rotativos y comando `/reporte` para el dueño. *(Referencia: Fase 6 del plan original.)*
+**Objetivo:** Reintentos ante errores de red en la API, logs rotativos y comando `/reporte` para el dueño. *(Referencia: Fase 6 del plan original.)* Detalle en `.context/plans/PLAN_FASE_7.md`.
 
 ### Módulos
+- [x] **Planificación** — canal de `/reporte` decidido con el dueño: **email SMTP** (stdlib `smtplib`, sin dependencias nuevas); módulos 7.1 (retries), 7.2 (logs rotativos), 7.3 (`/reporte` por email). Rama `feat/robustez-observabilidad`.
 - [ ] Captura de excepciones de la API de WhatsApp con reintento.
 - [ ] Logs de conversaciones en archivo rotativo (`RotatingFileHandler`).
 - [ ] Comando `/reporte` que envíe los logs por email al dueño.

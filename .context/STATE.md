@@ -2,29 +2,36 @@
 
 ## Estado Actual
 
-- **Fase actual:** Fase 6 — Facturación y Mensajes Programados.
-- **Módulo activo:** Cierre de Fase 6 (README, verificación final y merge a `main`).
-- **Última acción:** Módulo 6.3 completado — `scheduled_notifications.py` (recordatorio diario vía `sendMessage`, registro `clientes.json` gitignored configurable con `CLIENTES_PATH`), disparador `threading.Timer` de 24 h en `run.py`, tests con mock. Suite: **69 passed**.
-- **Siguiente acción:** cierre de la Fase 6: sincronizar README y `.context/CONTEXT.md` (nuevos servicios, config, `Respuesta` estructurada), merge de `feat/facturacion` a `main` y push con PR.
+- **Fase actual:** Fase 7 — Robustez y Observabilidad (planificada).
+- **Módulo activo:** 7.1 — Reintentos ante errores de la API de WhatsApp.
+- **Última acción:** Fase 6 completada y mergeada a `main` (`8b09965`, PR #2): `/factura` con PDFs, `/factura` + `Respuesta(texto, archivo)`, recordatorios diarios (`scheduled_notifications`), docs sincronizadas. Suite: **69 passed**.
+- **Siguiente acción:** implementar 7.1 (`app/utils/retry.py` + integración en `message_handler.py` y `scheduled_notifications.py` + tests).
 - **Bloqueos:** Ninguno. Entorno de pruebas: venv `/home/nano/Documentos/dev-env` (Python 3.12.3, pytest 9.0.2).
-- **Cambios pendientes sin commitear:** `.context/` (STATE/ROADMAP/plans) — planificación de Fase 6.
+- **Cambios pendientes sin commitear:** `.context/` (STATE/ROADMAP/plans) — planificación de Fase 7.
 
-## Plan Fase 6 — Facturación y Mensajes Programados
+## Plan Fase 7 — Robustez y Observabilidad
 
 | # | Tarea | Descripción | Estado |
 | :-- | :--- | :--- | :--- |
-| 6.1 | Servicio de factura PDF | `reportlab` en requirements; `invoice_service.generar_factura()`: cliente, cédula/rif, concepto, monto, fecha → PDF | ✅ Completado |
-| 6.2 | Comando `/factura` | Estado `ESPERANDO_DETALLE_FACTURA`; guía por 4 pasos; respuesta `Respuesta(texto, archivo)`; envío con `answer_with_file` | ✅ Completado |
-| 6.3 | Job diario de recordatorios | `scheduled_notifications.py`: recordatorio diario con `threading.Timer` en `run.py`, registro `clientes.json` (gitignored), envía vía `sendMessage` | ✅ Completado |
+| 7.1 | Reintentos en envíos | `app/utils/retry.py` (`con_reintentos`, backoff exp.), aplicado a `answer`/`answer_with_file` y `sendMessage` | ⬜ **Siguiente** |
+| 7.2 | Logs rotativos | `RotatingFileHandler` en `logger.py` (`LOG_MAX_BYTES`, `LOG_BACKUP_COUNT`) | ⬜ Pendiente |
+| 7.3 | Comando `/reporte` | Envía log por **email SMTP** al dueño (solo `OWNER_PHONE`); `report_service.py` + config SMTP | ⬜ Pendiente |
 
 ## Repositorio
 
-- **Rama:** `main` (activa tras merge de Fase 5). Propuesta para Fase 6: `feat/facturacion` (desde `main`).
-- **Remoto:** `origin` — ramas `main` y `feat/local-testing-repl`.
-- **Últimos commits (main):** `2a20a30` (merge Fase 5) → `e0c0167` (thread-safety + recarga) → `dade28f` (inventario unificado) → `837a0a6` (SDD + limpieza).
+- **Rama:** `main` (`8b09965`, merge PR #2 Fase 6). Propuesta para Fase 7: `feat/robustez-observabilidad` (desde `main`).
+- **Remoto:** `origin` — ramas `main`, `feat/local-testing-repl`, `feature/standalone-chatbot`.
+- **Últimos commits (main):** `8b09965` (merge PR #2 Fase 6) → `f3591b0` (docs Fase 6) → `f43cb58` (recordatorios) → `57807f5` (/factura) → `2a20a30` (merge Fase 5).
+
+## Fases Completadas
+
+| Fase | Estado | Detalle |
+| :--- | :--- | :--- |
+| Fase 5 | ✅ Completada | Estabilización: tests verdes, `/stock`/`/precio` reales, thread-safety, recarga de KB. PR #1 → `2a20a30`. |
+| Fase 6 | ✅ Completada | Facturación y recordatorios: PDFs (`reportlab`), `/factura`, job diario. PR #2 → `8b09965`. |
 
 ## Pendiente / No trackeado (por decisión del usuario)
 
 - `AGENTS.md`, `Upgrade_sistema_inventario_chatbot.md`, `tareas_opencode.md`, `instrucciones_gemini.md`, `PLAN_MONETIZACION.md` están en `.gitignore`.
-- `chatbot_operations.log`, `__pycache__/`, `.env` e `inventory.db` no se versionan.
+- `chatbot_operations.log`, `__pycache__/`, `.env`, `inventory.db`, `app/data/facturas/` y `app/data/clientes.json` no se versionan.
 - `docs/` no existe pese a aparecer en versiones antiguas del README.
