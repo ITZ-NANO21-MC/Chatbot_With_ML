@@ -18,9 +18,12 @@ Objetivo de producto (según el plan en `Upgrade_sistema_inventario_chatbot.md`)
 | rapidfuzz | >= 3.0.0 (fuzzy matching) |
 | whatsapp-chatbot-python | >= 0.4.0 (GreenAPIBot, Green-API) |
 | python-dotenv | >= 0.21.0 |
+| reportlab | >= 4.0 (facturas PDF, Fase 6) |
 | pytest | >= 7.0.0 (tests) |
 | pytest-mock | >= 3.0.0 |
 | pylint | >= 3.0.0 (linter, ejecución manual) |
+
+**Despliegue:** Linux systemd (unidad `chatbot.service`, usuario `chatbot`) o Windows `schtasks` (tarea `ChatbotML`). Scripts en `scripts/`; operación en `docs/DESPLEGUE.md`. Sin contenedores ni orquestación.
 
 ## Estructura de Carpetas (real, actualizada en rama `feat/local-testing-repl`)
 
@@ -28,7 +31,11 @@ Objetivo de producto (según el plan en `Upgrade_sistema_inventario_chatbot.md`)
 Chatbot_With_ML/
 ├── run.py                  → Punto de entrada: valida .env → ChatbotEngine → GreenAPIBot → register_handlers → run_forever()
 ├── scripts/
-│   └── repl_local.py       → REPL local de pruebas (no requiere WhatsApp)
+│   ├── repl_local.py       → REPL local de pruebas (no requiere WhatsApp)
+│   ├── install_linux.sh    → Despliegue como servicio systemd (usuario `chatbot`, .env 600, Restart=always)
+│   └── install_windows.bat → Despliegue como tarea programada `ChatbotML` (schtasks ONLOGON)
+├── docs/
+│   └── DESPLEGUE.md        → Operación 24/7 del bot (Linux + Windows, actualización, rollback, seguridad)
 ├── app/
 │   ├── config.py           → Carga .env desde la raíz; expone credenciales, umbrales y rutas (TFIDF_THRESHOLD, FUZZY_THRESHOLD, INVENTORY_SOURCE_TYPE, NEGOCIO_NOMBRE, FACTURAS_PATH, CLIENTES_PATH, OWNER_PHONE, SMTP_*, LOG_MAX_BYTES, LOG_BACKUP_COUNT)
 │   ├── handlers/
@@ -86,12 +93,13 @@ Chatbot_With_ML/
 
 ## Estado de Madurez
 
-- **Estable para producción a pequeña escala** (suite completa en verde: 90 pruebas; flujo verificado con REPL local y factura real generada).
+- **Estable para producción a pequeña escala** (suite completa en verde: 90 pruebas; flujo verificado con REPL local y factura real generada; despliegue 24/7 documentado en `docs/DESPLEGUE.md`).
 - Plan original Fases 0–4 **completadas** (estructura modular, comandos, menús, inventario multi-fuente).
 - Fase 5 (estabilización) **completada**: tests reparados, `/stock`/`/precio` integrados con inventario real, fuzzy de inventario robustecido, state_manager thread-safe, recarga de knowledge base, README sincronizado.
 - Fase 6 (facturación y recordatorios) **completada**: PDFs con `reportlab` + contador correlativo, comando `/factura` en 4 pasos con envío del PDF (`Respuesta(texto, archivo)`), recordatorios diarios con `threading.Timer`, registro de clientes gitignored.
 - Fase 7 (robustez y observabilidad) **completada**: reintentos con backoff exponencial en envíos (`retry.py`), logs rotativos (`RotatingFileHandler`), comando `/reporte` por email SMTP restringido al dueño.
-- Fase 8 pendiente (despliegue como servicio). Deuda técnica remanente: estados sin persistencia entre reinicios, conocimiento sin TTL de caché, sin límite de tamaño en el dict de estados (mejora opcional), conversaciones y facturas sin retención/privacy policy documentada.
+- Fase 8 (despliegue como servicio) **completada**: `scripts/install_linux.sh` (unidad `chatbot.service` systemd con usuario dedicado `chatbot`, `.env` validado con permisos 600) y `scripts/install_windows.bat` (tarea programada `ChatbotML`); documentación de operación 24/7 en `docs/DESPLEGUE.md`.
+- Deuda técnica remanente: estados sin persistencia entre reinicios, conocimiento sin TTL de caché, sin límite de tamaño en el dict de estados (mejora opcional), conversaciones y facturas sin retención/privacy policy documentada.
 
 ## Referencias
 

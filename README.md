@@ -122,7 +122,17 @@ graph TB
 
    **Importante:** `.env` esta excluido del control de versiones. Nunca lo compartas ni lo versiones.
 
-5. **Configurar el numero de WhatsApp**
+5. **Desplegar como servicio** (Fase 8) — ver [docs/DESPLEGUE.md](docs/DESPLEGUE.md):
+
+   ```bash
+   sudo bash scripts/install_linux.sh                 # Linux: systemd ('chatbot.service')
+   scripts\install_windows.bat                        # Windows: tarea programada 'ChatbotML'
+   ```
+
+   El instalador crea el usuario dedicado `chatbot`, valida/copia `.env`, instala
+   dependencias y habilita el arranque automático y auto-recuperación del bot.
+
+6. **Configurar el numero de WhatsApp**
 
    - Ve a la consola de Green-API, crea una instancia (plan "Developer") y escanea el codigo QR con el numero dedicado al bot.
 
@@ -186,7 +196,11 @@ Suite actual: **90 pruebas** (motor de IA, procesador de mensajes, handlers, con
 Chatbot_With_ML/
 ├── run.py                     # Punto de entrada: valida .env → ChatbotEngine → GreenAPIBot → register_handlers
 ├── scripts/
-│   └── repl_local.py          # REPL local de pruebas (sin WhatsApp)
+│   ├── repl_local.py          # REPL local de pruebas (sin WhatsApp)
+│   ├── install_linux.sh       # Despliegue como servicio systemd (Fase 8)
+│   └── install_windows.bat    # Despliegue como tarea programada en Windows (Fase 8)
+├── docs/
+│   └── DESPLEGUE.md           # Operación 24/7 del bot (Fase 8)
 ├── app/
 │   ├── config.py              # Carga .env; credenciales, umbrales, rutas de inventario/facturas/clientes
 │   ├── handlers/

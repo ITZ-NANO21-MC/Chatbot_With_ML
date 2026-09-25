@@ -80,3 +80,10 @@ Registro de Decisiones de Arquitectura (ADR). Cada decisión significativa se do
 - **Decisión:** El comando `/reporte` (restringido a `OWNER_PHONE`) envía el log de operaciones al `OWNER_EMAIL` por email usando `smtplib` estándar (`report_service.enviar_reporte_email`), con STARTTLS (puerto 587) o SMTP_SSL (puerto 465, `SMTP_SSL=true`).
 - **Alternativas:** Adjuntar el log por WhatsApp (`answer_with_file`); canal dual WhatsApp+email.
 - **Motivación:** El dueño prefirió email (sin costo de mensajes y sin exponer datos del log a terceros en el chat). Sin dependencias nuevas. Riesgo: el bot necesita credenciales SMTP en `.env`; si faltan, `/reporte` queda deshabilitado en vez de fallar.
+
+## ADR-009: Despliegue como servicio con usuario dedicado
+- **Fecha:** 2026-09-24
+- **Estado:** Aceptada
+- **Decisión:** El bot se despliega como **servicio permanente**: en Linux, unidad `systemd` `chatbot.service` (`Restart=always`, `RestartSec=5`, arranque `multi-user.target`) ejecutada por el **usuario de sistema dedicado `chatbot`** sin login (`useradd --system --no-create-home --shell /usr/sbin/nologin`); en Windows, tarea programada `ChatbotML` (`schtasks /SC ONLOGON`) con `pythonw.exe`. El `.env` se **valida y, si falta, se copia desde `.env.example`** (nunca se versiona) y queda con permisos `600` (Linux) u oculto (Windows).
+- **Alternativas:** Ejecutar `run.py` manualmente / con `nohup`; contenedores (Docker); ejecutar con el usuario actual.
+- **Motivación:** El dueño eligió **ambas plataformas**, usuario **dedicado** (aislar permisos de escritura solo sobre `app/data/` y el log) y **validación con copia de plantilla** del `.env`. `install_linux.sh` es idempotente y tiene dry-run (`--check`); no introduce contenedores para simplificar la operación de una PYME. Endurecimiento de la unidad: `NoNewPrivileges`, `PrivateTmp`, `ProtectSystem=full`, `ReadWritePaths` al árbol de despliegue.

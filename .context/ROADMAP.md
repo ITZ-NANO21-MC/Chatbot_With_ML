@@ -11,7 +11,7 @@
 | Fase 5 | ✅ Completada | Estabilización y deuda técnica (tests verdes, mensajes coherentes, docs sincronizadas). |
 | Fase 6 | ✅ Completada | Facturación y mensajes programados (PDFs, `/factura`, recordatorios). |
 | Fase 7 | ✅ Completada | Robustez, logs rotativos y reportes. |
-| Fase 8 | 🔨 **En curso** | Despliegue como servicio (Linux `systemd` + Windows tarea programada). |
+| Fase 8 | ✅ Completada | Despliegue como servicio (Linux `systemd` + Windows tarea programada). |
 
 ---
 
@@ -66,15 +66,16 @@
 
 ---
 
-## Fase 8 — Despliegue como Servicio (en curso)
+## Fase 8 — Despliegue como Servicio (completada)
 
 **Objetivo:** El bot arranca automáticamente al encender la máquina del cliente y se recupera solo ante caídas. *(Referencia: Fase 7 del plan original.)* Detalle en `.context/plans/PLAN_FASE_8.md`.
 
 ### Módulos
-- [x] **Planificación** — decisiones con el dueño: despliegue en **Linux (`systemd`) y Windows (tarea programada)**; servicio bajo **usuario dedicado `chatbot`**; `.env` **validado + copiado desde plantilla** (nunca credenciales reales). Rama `feat/despliegue-servicio`.
-- [ ] `scripts/install_linux.sh` — usuario `chatbot` sin login, venv + requirements, `.env` (chmod 600 + validación), unidad `chatbot.service` (`Restart=always`), `enable --now`, resumen de operación.
-- [ ] `scripts/install_windows.bat` — venv + requirements, `.env` validado, tarea programada con `schtasks` (arranque/inicio de sesión), idempotente.
-- [ ] `docs/DESPLEGUE.md` — operación 24/7 en Linux (systemctl/journalctl) y Windows (schtasks), actualización, log/rollback y seguridad de credenciales. **Crea el directorio `docs/`, que figuraba en el README histórico pero nunca existió.**
+- [x] **Planificación** — decisiones con el dueño: despliegue en **Linux (`systemd`) y Windows (tarea programada)**; servicio bajo **usuario dedicado `chatbot`**; `.env` **validado + copiado desde plantilla** (nunca credenciales reales). Rama `feat/despliegue-servicio`. *(commit `5c9a8d0`)*
+- [x] **8.1 Scripts de instalación** — `scripts/install_linux.sh` (usuario `chatbot` sin login, venv + requirements, `.env` chmod 600 + validación, unidad `chatbot.service` con `Restart=always` y endurecimiento, `enable --now`; idempotente, dry-run `--check`) y `scripts/install_windows.bat` (venv, `.env` validado, tarea `ChatbotML` con `schtasks /SC ONLOGON` usando `pythonw.exe`; idempotente con `/F`). Verificado con `bash -n` y dry-run. *(commit `d3f1da5`)*
+- [x] **8.2 Documentación de operación 24/7** — `docs/DESPLEGUE.md` (**crea el directorio `docs/`**, que figuraba en README históricos pero nunca existió): instalación, estado/logs (`systemctl`/`journalctl`, `schtasks`), re-inicio/detención, actualización, desinstalación, respaldos, seguridad de credenciales, troubleshooting y arquitectura del despliegue.
+
+**Cierre:** README y `.context` sincronizados (CONTEXT, DECISIONS ADR-009, STATE, ROADMAP). Suite completa: **90 pruebas en verde**. Rama: `feat/despliegue-servicio`.
 
 ### Dependencias
 - Fases 6–7 completadas (funcionalidad estabilizada).

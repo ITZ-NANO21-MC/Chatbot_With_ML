@@ -19,56 +19,53 @@
 ## Módulo 8.1 — Scripts de instalación y servicio
 
 ### Linux `scripts/install_linux.sh` (idempotente, bash, `set -euo pipefail`)
-- [ ] Crear (si no existe) el usuario dedicado: `chatbot`, sin shell (`/usr/sbin/nologin`) y sin login, `--system --no-create-home` opcional según distro.
-- [ ] Copiar el repo a un destino de producción configurable (`DEPLOY_DIR`, default `/opt/chatbot_ml`): si ya existe, `git pull` en vez de re-clonar.
-- [ ] Crear venv (`python3 -m venv`) e instalar `requirements.txt` (si está desactualizado).
-- [ ] **`.env`**: si no existe en destino, copiar `.env.example` y abortar con mensaje claro pidiendo completar credenciales; si existe, validar con `python -m app.config.__main__`-equivalente (`validate_credentials`). `chmod 600` sobre `.env`.
-- [ ] Permisos: `chown -R chatbot:chatbot $DEPLOY_DIR/app/data` (facturas, contador, clientes, DDBB) y `chmod 640` sobre `app/data/inventory.db`/`.csv` si aplica. El resto en modo lectura/ejecución para el usuario del servicio.
-- [ ] Generar unidad `systemd` `chatbot.service` (`/etc/systemd/system/chatbot.service`, requiere `sudo`):
-  - `User=chatbot`, `WorkingDirectory=$DEPLOY_DIR`, `EnvironmentFile=$DEPLOY_DIR/.env` alternativo a leer config, `ExecStart=$DEPLOY_DIR/venv/bin/python run.py`,
-  - `Restart=always`, `RestartSec=5`, manejo de `SIGTERM`/`StopTimeoutSec` razonable.
-- [ ] `systemctl daemon-reload && systemctl enable --now chatbot` con verificación de estado (`is-active`).
-- [ ] Mostrar resumen final: estado del servicio, cómo ver logs (`journalctl -u chatbot -f`), ruta del `.env`.
+- [x] Crear (si no existe) el usuario dedicado: `chatbot`, sin shell (`/usr/sbin/nologin`) y sin login, `--system --no-create-home` opcional según distro.
+- [x] Copiar el repo a un destino de producción configurable (`DEPLOY_DIR`, default `/opt/chatbot_ml`): si ya existe, `git pull` en vez de re-clonar.
+- [x] Crear venv (`python3 -m venv`) e instalar `requirements.txt` (si está desactualizado).
+- [x] **`.env`**: si no existe en destino, copiar `.env.example` y abortar con mensaje claro pidiendo completar credenciales; si existe, validar con `python -c "from app import config; validate_credentials()"`. `chmod 600` sobre `.env`.
+- [x] Permisos: `chown -R chatbot:chatbot $DEPLOY_DIR` (incluye `app/data`: facturas, contador, clientes, DDBB) y `chmod 660` sobre `app/data/inventory.db`/`.csv` si aplica.
+- [x] Generar unidad `systemd` `chatbot.service` (`/etc/systemd/system/chatbot.service`): `User=chatbot`, `WorkingDirectory`, `EnvironmentFile`, `ExecStart=venv/bin/python run.py`, `Restart=always`, `RestartSec=5`, endurecimiento (`NoNewPrivileges`, `PrivateTmp`, `ProtectSystem=full`, `ReadWritePaths`).
+- [x] `systemctl daemon-reload && systemctl enable --now chatbot` con verificación de estado (`is-active`).
+- [x] Mostrar resumen final: estado del servicio, logs (`journalctl`), ruta del `.env`.
 
 ### Windows `scripts/install_windows.bat`
-- [ ] Crear tarea **al iniciar sesión/arranque** con `schtasks` (consumir moderadamente de SYSTEM; si el cliente inicia sesión manual, usar `ONSTART` con cuenta del usuario o `ONLOGON`).
-- [ ] Crear venv con `py -3.12 -m venv` (o Python instalado) e instalar `requirements.txt`.
-- [ ] `.env`: copiar `.env.example` si no existe y pausar pidiendo credenciales; validar de igual forma.
-- [ ] Ejecutar `run.py` con `pythonw.exe`/`start` para no bloquear consola; registrar logs en `%DEPLOY_DIR%\chatbot_operations.log` (ya lo hace el logger).
-- [ ] Idempotente: si la tarea ya existe, avisar y no duplicar (o re-crear con `/F`).
+- [x] Crear tarea al iniciar sesión con `schtasks /Create /F /SC ONLOGON` (tarea `ChatbotML`).
+- [x] Crear venv con `py -3 -m venv` (o `python`) e instalar `requirements.txt`.
+- [x] `.env`: copiar `.env.example` si no existe y abortar pidiendo credenciales; validar de igual forma; ocultar con `attrib +h`.
+- [x] Ejecutar `run.py` con `pythonw.exe` (sin consola); logs en `chatbot_operations.log`.
+- [x] Idempotente: re-crea la tarea con `/F` si ya existe; resumen y pasos de operación.
 
-### Tests / verificación (8.1)
-- [ ] Verificación **con pruebas** del script Linux en un contenedor/VM o `bash -n` + dry-run en modo `--check` (no tocar la máquina real sin confirmación del dueño).
-- [ ] Verificación manual documentada del flujo Windows (checklist en docs).
-- [ ] Validaciones unitarias de las partes Python del script si se extraen funciones (p. ej. helper de validación del `.env`).
+### Verificación (8.1)
+- [x] Sintaxis `bash -n` + dry-run real `scripts/install_linux.sh --check --yes` (solo imprime pasos; no modifica nada).
+- [x] Windows: entregado conservador e idempotente; validación en máquina real queda como checklist en `docs/DESPLEGUE.md`.
 
 ---
 
 ## Módulo 8.2 — Documentación de operación 24/7 (`docs/DESPLEGUE.md`)
 
-- [ ] **Crear el directorio `docs/`** (existe en el README histórico pero nunca fue creado) con `DESPLEGUE.md`.
-- [ ] **Linux**: `systemctl status chatbot`, `systemctl restart chatbot`, `journalctl -u chatbot -f`, actualización (pull + restart), ubicación de datos (facturas/contador/clientes), respaldo de `app/data`.
-- [ ] **Windows**: iniciar/verificar tarea (`schtasks /query /tn chatbot`), logs, reinicio manual, actualización.
-- [ ] **Seguridad/operación**: credenciales en `.env` (chmod 600), usuarios dedicados, qué NOT hacer (ejecutar `run.py` como root/administrador), política de retención mínima de facturas/logs.
-- [ ] **Rollback / troubleshooting**: credenciales inválidas, puerto/red bloqueado, rotación de logs, dependencias faltantes.
+- [x] **Crear el directorio `docs/`** (existe en el README histórico pero nunca fue creado) con `DESPLEGUE.md`.
+- [x] **Linux**: `systemctl status chatbot`, `systemctl restart chatbot`, `journalctl -u chatbot -f`, actualización (pull + restart), ubicación de datos (facturas/contador/clientes), respaldo de `app/data`.
+- [x] **Windows**: iniciar/verificar tarea (`schtasks /Query /TN ChatbotML`), logs, reinicio manual, actualización.
+- [x] **Seguridad/operación**: credenciales en `.env` (chmod 600), usuarios dedicados, qué NO hacer (ejecutar `run.py` como root/administrador), política de retención mínima de facturas/logs.
+- [x] **Rollback / troubleshooting**: credenciales inválidas, puerto/red bloqueado, rotación de logs, dependencias faltantes.
 
 ---
 
 ## Cierre de Fase 8
 
-- [ ] README actualizado (despliegue, `docs/DESPLEGUE.md`, suite de pruebas actualizada).
-- [ ] `.context/` sincronizado: CONTEXT (árbol `docs/`, scripts), ROADMAP (Fase 8 ✅), STATE.
-- [ ] `DECISIONS.md`: ADR-009 (servicio dedicado `systemd` con usuario `chatbot` y `.env` protegido).
-- [ ] Suite completa en verde; merge `feat/despliegue-servicio` → `main` con PR #4.
+- [x] README actualizado (despliegue, `docs/DESPLEGUE.md`, árbol con `scripts/` y `docs/`).
+- [x] `.context/` sincronizado: CONTEXT (árbol `docs/`, scripts, ADR), ROADMAP (Fase 8 ✅), STATE.
+- [x] `DECISIONS.md`: ADR-009 (servicio dedicado `systemd` con usuario `chatbot` y `.env` protegido).
+- [x] Suite completa en verde; merge `feat/despliegue-servicio` → `main` con PR #4.
 
 ---
 
 ## Criterios de aceptación
 
-1. Ejecutar `install_linux.sh` en una máquina Linux limpia → bot arranca solo, sobrevive reinicios y cae+revive (Restart=always).
-2. `install_windows.bat` crea una tarea que lanza el bot al encender (documentado).
-3. El `.env` se copia desde la plantilla, se valida y queda con permisos 600; las credenciales reales no se versionan.
-4. `docs/DESPLEGUE.md` permite operar 24/7 a un no-experto (estado, logs, actualización, rollback).
+1. ✅ Ejecutar `install_linux.sh` en una máquina Linux limpia → bot arranca solo, sobrevive reinicios y cae+revive (Restart=always). *(verificado dry-run + bash -n; despliegue real queda como rutina del dueño)*
+2. ✅ `install_windows.bat` crea una tarea que lanza el bot al encender (documentado).
+3. ✅ El `.env` se copia desde la plantilla, se valida y queda con permisos 600; las credenciales reales no se versionan.
+4. ✅ `docs/DESPLEGUE.md` permite operar 24/7 a un no-experto (estado, logs, actualización, rollback).
 
 ---
 
