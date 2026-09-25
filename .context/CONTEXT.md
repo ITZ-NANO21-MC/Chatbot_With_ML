@@ -30,7 +30,7 @@ Chatbot_With_ML/
 ├── scripts/
 │   └── repl_local.py       → REPL local de pruebas (no requiere WhatsApp)
 ├── app/
-│   ├── config.py           → Carga .env desde la raíz; expone credenciales, umbrales y rutas (TFIDF_THRESHOLD, FUZZY_THRESHOLD, INVENTORY_SOURCE_TYPE, NEGOCIO_NOMBRE, FACTURAS_PATH, CLIENTES_PATH)
+│   ├── config.py           → Carga .env desde la raíz; expone credenciales, umbrales y rutas (TFIDF_THRESHOLD, FUZZY_THRESHOLD, INVENTORY_SOURCE_TYPE, NEGOCIO_NOMBRE, FACTURAS_PATH, CLIENTES_PATH, OWNER_PHONE, SMTP_*, LOG_MAX_BYTES, LOG_BACKUP_COUNT)
 │   ├── handlers/
 │   │   └── message_handler.py → register_handlers(bot, engine): ruteo de comandos + menú por estados + fallback IA + envío de PDFs
 │   ├── services/
@@ -39,9 +39,11 @@ Chatbot_With_ML/
 │   │   ├── message_processor.py → procesar_mensaje()/procesar_mensaje_con_archivo(): lógica de mensajes y máquina de estados (Respuesta(texto, archivo))
 │   │   ├── state_manager.py   → Estado y datos por usuario en memoria (dict, thread-safe con RLock; 4 estados)
 │   │   ├── invoice_service.py → generar_factura(FacturaDatos) → PDF en app/data/facturas/ + contador correlativo
-│   │   └── scheduled_notifications.py → enviar_recordatorios_diarios(bot) vía sendMessage
+│   │   ├── scheduled_notifications.py → enviar_recordatorios_diarios(bot) vía sendMessage
+│   │   └── report_service.py  → enviar_reporte_email(): log por SMTP al dueño (smtplib, STARTTLS/SSL)
 │   ├── utils/
-│   │   └── logger.py          → get_logger(name): escribe a chatbot_operations.log + stdout
+│   │   ├── logger.py          → get_logger(name): logging centralizado con RotatingFileHandler + stdout
+│   │   └── retry.py           → con_reintentos(): backoff exponencial para envíos de salida
 │   └── data/
 │       ├── knowledge_base.json → "conocimiento": [{pregunta_base, respuesta, sinonimos}]
 │       ├── inventory.db        → tabla `productos` (nombre, precio, stock) — sembrado con 4 productos
@@ -69,6 +71,7 @@ Chatbot_With_ML/
 - **Estado de conversación** — dict en memoria en `state_manager.py` keyed por `user_id` (teléfono). Estados: `MENU_PRINCIPAL`, `ESPERANDO_PRODUCTO_STOCK`, `ESPERANDO_PRODUCTO_PRECIO`, `ESPERANDO_DETALLE_FACTURA`. Datos acumulados por usuario (`get_datos`/`set_datos`/`clear_datos`). Acceso protegido con `threading.RLock`. **Sin persistencia entre reinicios.**
 - **Facturas** — `app/services/invoice_service.py`: `FacturaDatos(cliente, cedula_rif, concepto, monto, fecha)` → PDF en `app/data/facturas/` (gitignored), número correlativo persistido en `contador.json`. `NEGOCIO_NOMBRE` en el encabezado.
 - **Clientes para recordatorios** — `app/data/clientes.json` (gitignored): lista `[{"chat_id": "...@c.us", "nombre": "..."}]`. `scheduled_notifications.enviar_recordatorios_diarios(bot)` envía el recordatorio a cada `chat_id` vía `sendMessage`, reprogramable con `threading.Timer` en `run.py`.
+- **Reportes** — `app/services/report_service.py`: `enviar_reporte_email()` envía el log (`chatbot_operations.log` o su respaldo rotativo no vacío) al `OWNER_EMAIL` por SMTP (STARTTLS o SSL, configurable). `OWNER_PHONE` restringe el comando `/reporte`. Logs rotativos: `LOG_MAX_BYTES` (5 MB) y `LOG_BACKUP_COUNT` (3).
 
 ## Reglas de Negocio Fijas
 
@@ -83,11 +86,12 @@ Chatbot_With_ML/
 
 ## Estado de Madurez
 
-- **Estable para producción a pequeña escala** (suite completa en verde: 69 pruebas; flujo verificado con REPL local y factura real generada).
+- **Estable para producción a pequeña escala** (suite completa en verde: 90 pruebas; flujo verificado con REPL local y factura real generada).
 - Plan original Fases 0–4 **completadas** (estructura modular, comandos, menús, inventario multi-fuente).
 - Fase 5 (estabilización) **completada**: tests reparados, `/stock`/`/precio` integrados con inventario real, fuzzy de inventario robustecido, state_manager thread-safe, recarga de knowledge base, README sincronizado.
 - Fase 6 (facturación y recordatorios) **completada**: PDFs con `reportlab` + contador correlativo, comando `/factura` en 4 pasos con envío del PDF (`Respuesta(texto, archivo)`), recordatorios diarios con `threading.Timer`, registro de clientes gitignored.
-- Fases 7–8 pendientes (robustez/observabilidad, despliegue como servicio). Deuda técnica remanente: estados sin persistencia entre reinicios, conocimiento sin TTL de caché, sin límite de tamaño en el dict de estados (mejora opcional), conversaciones y facturas sin retención/privacy policy documentada.
+- Fase 7 (robustez y observabilidad) **completada**: reintentos con backoff exponencial en envíos (`retry.py`), logs rotativos (`RotatingFileHandler`), comando `/reporte` por email SMTP restringido al dueño.
+- Fase 8 pendiente (despliegue como servicio). Deuda técnica remanente: estados sin persistencia entre reinicios, conocimiento sin TTL de caché, sin límite de tamaño en el dict de estados (mejora opcional), conversaciones y facturas sin retención/privacy policy documentada.
 
 ## Referencias
 

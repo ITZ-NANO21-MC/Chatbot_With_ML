@@ -65,4 +65,18 @@ Registro de Decisiones de Arquitectura (ADR). Cada decisión significativa se do
 - **Estado:** Aceptada
 - **Decisión:** El conocimiento del bot reside en `app/data/knowledge_base.json` (array `conocimiento`), cargado al inicializar `ChatbotEngine`.
 - **Alternativas:** Datos en código, en base de datos, o API de administración en caliente.
-- **Motivación:** Permite actualizar respuestas sin tocar código, manteniendo la separación dato/lógica. Limitación: editar el JSON exige reiniciar el bot.
+- **Motivación:** Permite actualizar respuestas sin tocar código, manteniendo la separación dato/lógica. Limitación: editar el JSON exige reiniciar el bot (mitigada con `recargar_conocimiento()`, Fase 5).
+
+## ADR-007: Reintentos con backoff exponencial en envíos de salida
+- **Fecha:** 2026-09-24
+- **Estado:** Aceptada
+- **Decisión:** `app/utils/retry.py` expone `con_reintentos(intentos=3, retraso_base=1.0, factor=2.0, excepciones=(ConnectionError, TimeoutError, OSError))`, decorando solo las llamadas de envío (`notification.answer`/`answer_with_file` en `message_handler.py`, `sendMessage` en `scheduled_notifications.py`), nunca el procesamiento del mensaje entrante.
+- **Alternativas:** Retry a nivel de todo el handler; librerías de retry (tenacity); sin reintentos.
+- **Motivación:** Errores transitorios de red/API de Green-API no deben descartar respuestas válidas; aplicar retry solo al envío evita reprocesar o duplicar efectos (facturación). Los reintentos bloquean el hilo del webhook unos segundos, aceptable para el volumen de una PYME.
+
+## ADR-008: Canal de `/reporte` — email SMTP (decidido por el dueño)
+- **Fecha:** 2026-09-24
+- **Estado:** Aceptada
+- **Decisión:** El comando `/reporte` (restringido a `OWNER_PHONE`) envía el log de operaciones al `OWNER_EMAIL` por email usando `smtplib` estándar (`report_service.enviar_reporte_email`), con STARTTLS (puerto 587) o SMTP_SSL (puerto 465, `SMTP_SSL=true`).
+- **Alternativas:** Adjuntar el log por WhatsApp (`answer_with_file`); canal dual WhatsApp+email.
+- **Motivación:** El dueño prefirió email (sin costo de mensajes y sin exponer datos del log a terceros en el chat). Sin dependencias nuevas. Riesgo: el bot necesita credenciales SMTP en `.env`; si faltan, `/reporte` queda deshabilitado en vez de fallar.

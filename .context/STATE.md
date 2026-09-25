@@ -29,6 +29,7 @@
 | :--- | :--- | :--- |
 | Fase 5 | ✅ Completada | Estabilización: tests verdes, `/stock`/`/precio` reales, thread-safety, recarga de KB. PR #1 → `2a20a30`. |
 | Fase 6 | ✅ Completada | Facturación y recordatorios: PDFs (`reportlab`), `/factura`, job diario. PR #2 → `8b09965`. |
+| Fase 7 | ✅ Completada | Robustez: retries (`retry.py`), logs rotativos (`RotatingFileHandler`), `/reporte` por email. ADR-007/008. Rama `feat/robustez-observabilidad`. |
 
 ## Pendiente / No trackeado (por decisión del usuario)
 
