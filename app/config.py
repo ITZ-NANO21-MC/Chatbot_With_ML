@@ -61,6 +61,20 @@ CLIENTES_PATH: str = os.getenv(
     os.path.join(_project_root, "app", "data", "clientes.json")
 )
 
+# --- CONFIGURACIÓN DE REPORTES (Fase 7) ---
+# Teléfono/cuenta WhatsApp del dueño (p. ej. "5891...@c.us"); /reporte
+# solo responde a este identificador.
+OWNER_PHONE: str = os.getenv("OWNER_PHONE", "")
+# Destinatario del reporte por email y credenciales SMTP (se setean en .env).
+OWNER_EMAIL: str = os.getenv("OWNER_EMAIL", "")
+SMTP_HOST: str = os.getenv("SMTP_HOST", "")
+SMTP_PORT: int = int(os.getenv("SMTP_PORT", "587"))
+SMTP_USER: str = os.getenv("SMTP_USER", "")
+SMTP_PASSWORD: str = os.getenv("SMTP_PASSWORD", "")
+SMTP_FROM: str = os.getenv("SMTP_FROM", SMTP_USER)
+# 'true'/'1'/'si' → conexión SMTP_SSL; en otro caso STARTTLS (puerto 587).
+SMTP_SSL: bool = os.getenv("SMTP_SSL", "").lower() in ("1", "true", "si", "yes")
+
 
 def validate_credentials() -> bool:
     """Valida que las credenciales de Green-API estén configuradas.

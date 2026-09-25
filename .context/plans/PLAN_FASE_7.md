@@ -35,19 +35,19 @@
 
 ---
 
-## Módulo 7.3 — Comando `/reporte` que envía el log por email al dueño
+## Módulo 7.3 — Comando `/reporte` que envía el log por email al dueño ✅
 
 **Objetivo:** el dueño (chat id de WhatsApp configurado) ejecuta `/reporte` y el bot envía el log actual por **email** con `smtplib`.
 
 **Tareas:**
-- [ ] `config.py`: `OWNER_PHONE` (chat id de WhatsApp, p. ej. `5891...@c.us`), `OWNER_EMAIL`, `SMTP_HOST`, `SMTP_PORT` (default 587), `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM` (fallback `SMTP_USER`), `SMTP_SSL` opcional. Todos por entorno; si faltan credenciales SMTP, `/reporte` queda deshabilitado con log de advertencia.
-- [ ] `app/services/report_service.py`: `enviar_reporte_email(destinatario, asunto, adjunto_path=None)` — valida configuración (`ValueError` si faltan datos), construye `MIMEMultipart` (texto de resumen + adjunto del log vía `MIMEText`/`MIMEApplication`, `base64`), envía con `smtplib.SMTP` + `starttls`/`login` (o SSL según config). El adjunto se lee del `LOG_FILE_PATH` actual (o del `.1` más reciente si está vacío).
-- [ ] `message_processor.py`: comando `COMMAND_REPORTE` (`/reporte`); **solo** responde al `OWNER_PHONE` (si `OWNER_PHONE` no está configurado o el emisor no es el dueño → respuesta neutra "No disponible"/ignora). Al recibirlo: invoca `report_service.enviar_reporte_email` y responde confirmación; ante error SMTP responde mensaje de error (sin adjuntar directamente al chat).
-- [ ] `HELP_MESSAGE` actualizado con `/reporte` (marcado como opción del dueño).
-- [ ] `.env.example` con las nuevas variables comentadas.
-- [ ] Tests (`tests/test_report_service.py` + `tests/test_message_processor.py`): `enviar_reporte_email` con `smtplib.SMTP` mockeado envía el adjunto y cierra conexión; falta de config → `ValueError`/deshabilitado; `/reporte` del dueño → confirmación y llamada al servicio; `/reporte` de otro usuario → sin llamada y respuesta neutra.
+- [x] `config.py`: `OWNER_PHONE`, `OWNER_EMAIL`, `SMTP_HOST`, `SMTP_PORT` (default 587), `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM` (fallback `SMTP_USER`), `SMTP_SSL` (bool parseado). Credenciales solo en `.env`.
+- [x] `app/services/report_service.py`: `enviar_reporte_email(destinatario, asunto, ruta_adjunto)` — valida config (`ValueError` si incompleta), construye `MIMEMultipart` con adjunto del log (`_seleccionar_log`: prefiere el actual; si está vacío usa el respaldo `.1` más reciente), conecta con `SMTP`+STARTTLS o `SMTP_SSL`, cierra conexión siempre (`finally`).
+- [x] `message_processor.py`: comando `COMMAND_REPORTE` (`/reporte`); responde solo al `OWNER_PHONE` (sin config → `REPORTE_DESACTIVADO`; otro usuario → `REPORTE_NO_AUTORIZADO`); invoca `report_service` y responde confirmación o `REPORTE_ERROR`.
+- [x] `HELP_MESSAGE` actualizado con `/reporte`.
+- [x] `.env.example` documenta las variables SMTP/owner.
+- [x] Tests (`tests/test_report_service.py` + `tests/test_message_processor.py`): SMTP mockeado envía adjunto y cierra conexión; `SMTP_SSL` usa `SMTP_SSL`; destinatario/asunto personalizados; `_seleccionar_log` prioriza actual/no-vacío; `/reporte` desactivado/no autorizado/dueno/error.
 
-**Criterio de aceptación:** desde el chat del dueño, `/reporte` entrega el log por email (verificado con mock); cualquier otro emisor no recibe el log.
+**Criterio de aceptación:** ✅ desde el chat del dueño, `/reporte` entrega el log por email (verificado con mock); cualquier otro emisor no recibe el log. Suite: 90 tests.
 
 ---
 

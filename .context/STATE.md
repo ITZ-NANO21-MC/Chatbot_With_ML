@@ -3,11 +3,11 @@
 ## Estado Actual
 
 - **Fase actual:** Fase 7 — Robustez y Observabilidad.
-- **Módulo activo:** 7.3 — Comando `/reporte` (envío del log por email SMTP al dueño).
-- **Última acción:** Módulo 7.2 completado — `logger.py` migrado a `RotatingFileHandler` con `configurar_logging()` idempotente (`LOG_MAX_BYTES`/`LOG_BACKUP_COUNT` en config y `.env.example`). Rotación verificada (respaldo `.1`/`.2`). Suite: **80 passed**.
-- **Siguiente acción:** 7.3 — `report_service.py` (smtplib) + comando `/reporte` restringido a `OWNER_PHONE`, config SMTP y tests.
+- **Módulo activo:** Cierre de Fase 7 (README, CONTEXT/DECISIONS, verificación y merge a `main`).
+- **Última acción:** Módulo 7.3 completado — `report_service.py` (envío por email SMTP con adjunto del log, STARTTLS/SSL, cierre garantizado) y comando `/reporte` restringido a `OWNER_PHONE` (sin config → desactivado; otro usuario → no autorizado). Config SMTP en `.env` con `.env.example` actualizado. Suite: **90 passed**.
+- **Siguiente acción:** cierre de la Fase 7: sincronizar README y `.context` (CONTEXT, DECISIONS con ADR-007/008), merge de `feat/robustez-observabilidad` a `main` con PR.
 - **Bloqueos:** Ninguno. Entorno de pruebas: venv `/home/nano/Documentos/dev-env` (Python 3.12.3, pytest 9.0.2).
-- **Cambios pendientes sin commitear:** código del 7.2 + `.context/` (STATE/PLAN_FASE_7).
+- **Cambios pendientes sin commitear:** código del 7.3 + `.context/` (STATE/PLAN_FASE_7).
 
 ## Plan Fase 7 — Robustez y Observabilidad
 
@@ -15,7 +15,7 @@
 | :-- | :--- | :--- | :--- |
 | 7.1 | Reintentos en envíos | `app/utils/retry.py` (`con_reintentos`, backoff exp.), aplicado a `answer`/`answer_with_file` y `sendMessage` | ✅ Completado |
 | 7.2 | Logs rotativos | `RotatingFileHandler` en `logger.py` (`LOG_MAX_BYTES`, `LOG_BACKUP_COUNT`) | ✅ Completado |
-| 7.3 | Comando `/reporte` | Envía log por **email SMTP** al dueño (solo `OWNER_PHONE`); `report_service.py` + config SMTP | ⬜ Pendiente |
+| 7.3 | Comando `/reporte` | Envía log por **email SMTP** al dueño (solo `OWNER_PHONE`); `report_service.py` + config SMTP | ✅ Completado |
 
 ## Repositorio
 

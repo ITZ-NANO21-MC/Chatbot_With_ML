@@ -10,6 +10,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from app import config
 from app.services import state_manager
 from app.services.message_processor import (
     procesar_mensaje,
@@ -27,6 +28,10 @@ from app.services.message_processor import (
     FACTURA_PROMPT_MONTO,
     FACTURA_MONTO_INVALIDO,
     FACTURA_EXITO,
+    REPORTE_DESACTIVADO,
+    REPORTE_NO_AUTORIZADO,
+    REPORTE_ENVIADO,
+    REPORTE_ERROR,
 )
 
 
@@ -340,3 +345,49 @@ def test_flujo_factura_monto_no_positivo_error(mock_generar, engine):
     assert "No se pudo generar la factura" in respuesta
     assert state_manager.get_state("user1") is None
     assert state_manager.get_datos("user1") is None
+
+
+# =============================================================================
+# Flujo de reportes (/reporte)
+# =============================================================================
+
+def test_comando_reporte_sin_owner_configurado(engine, monkeypatch):
+    """Sin OWNER_PHONE configurado, /reporte debe estar desactivado."""
+    monkeypatch.setattr(config, "OWNER_PHONE", "")
+
+    respuesta = procesar_mensaje(engine, "user1", "/reporte")
+
+    assert respuesta == REPORTE_DESACTIVADO
+
+
+@patch("app.services.message_processor.report_service.enviar_reporte_email")
+def test_comando_reporte_no_autorizado_mantiene_reserva(mock_reporte, engine, monkeypatch):
+    """Un usuario distinto del dueño no debe recibir el reporte."""
+    monkeypatch.setattr(config, "OWNER_PHONE", "owner@c.us")
+
+    respuesta = procesar_mensaje(engine, "user1", "/reporte")
+
+    assert respuesta == REPORTE_NO_AUTORIZADO
+    mock_reporte.assert_not_called()
+
+
+@patch("app.services.message_processor.report_service.enviar_reporte_email")
+def test_comando_reporte_del_dueno_envia_email(mock_reporte, engine, monkeypatch):
+    """El dueño debe poder solicitar el envío del reporte."""
+    monkeypatch.setattr(config, "OWNER_PHONE", "owner@c.us")
+
+    respuesta = procesar_mensaje(engine, "owner@c.us", "/reporte")
+
+    assert respuesta == REPORTE_ENVIADO
+    mock_reporte.assert_called_once_with()
+
+
+@patch("app.services.message_processor.report_service.enviar_reporte_email")
+def test_comando_reporte_error_smtp_responde_error(mock_reporte, engine, monkeypatch):
+    """Un fallo al enviar el correo debe traducirse en mensaje de error."""
+    monkeypatch.setattr(config, "OWNER_PHONE", "owner@c.us")
+    mock_reporte.side_effect = Exception("SMTP caído")
+
+    respuesta = procesar_mensaje(engine, "owner@c.us", "/reporte")
+
+    assert respuesta == REPORTE_ERROR
