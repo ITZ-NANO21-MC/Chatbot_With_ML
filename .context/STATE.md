@@ -3,10 +3,10 @@
 ## Estado Actual
 
 - **Fase actual:** Fase 6 — Facturación y Mensajes Programados.
-- **Módulo activo:** 6.1 — `app/services/invoice_service.py` (generación de PDF con reportlab).
-- **Última acción:** Fase 5 completada y mergeada en `main` (PR #1, commit `2a20a30`). Suite: **45 passed**. Fase 6 seleccionada vía `/plan-phase --phase 6`.
-- **Siguiente acción:** 6.1 — añadir `reportlab` a `requirements.txt`, crear `invoice_service.py` (generación de factura PDF) y sus tests.
-- **Bloqueos:** Ninguno. Entorno de pruebas: venv `/home/nano/Documentos/dev-env` (Python 3.12.3, pytest 9.0.2). Determinado que `green-api` expone `answer_with_file(file, file_name)` para el envío de documentos.
+- **Módulo activo:** 6.2 — Comando `/factura` (flujo por estados + envío del PDF).
+- **Última acción:** Módulo 6.1 completado — `reportlab` (5.0.1) instalado; `invoice_service.generar_factura()` con número correlativo persistente, validaciones y tests (`tests/test_invoice_service.py`). Config ampliada (`NEGOCIO_NOMBRE`, `FACTURAS_PATH`) y `app/data/facturas/` gitignored. Suite: **53 passed**; PDF de prueba generado correctamente.
+- **Siguiente acción:** 6.2 — definir respuesta estructurada `Respuesta(texto, archivo)` y el estado `ESPERANDO_DETALLE_FACTURA`; `/factura` guía por 4 pasos y envía el PDF con `answer_with_file`.
+- **Bloqueos:** Ninguno. Entorno de pruebas: venv `/home/nano/Documentos/dev-env` (Python 3.12.3, pytest 9.0.2).
 - **Cambios pendientes sin commitear:** `.context/` (STATE/ROADMAP/plans) — planificación de Fase 6.
 
 ## Plan Fase 6 — Facturación y Mensajes Programados

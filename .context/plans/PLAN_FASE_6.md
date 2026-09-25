@@ -6,20 +6,21 @@
 
 ---
 
-## Módulo 6.1 — Servicio de factura PDF
+## Módulo 6.1 — Servicio de factura PDF ✅
 
 **Objetivo:** `app/services/invoice_service.py` genera un PDF de factura a partir de datos simples.
 
 **Tareas:**
-- [ ] Añadir `reportlab>=4.0.0` a `requirements.txt` e instalarlo en el venv `/home/nano/Documentos/dev-env`.
-- [ ] `generar_factura(datos: FacturaDatos) -> str` (o `Path`): recibe cliente, cédula/rif, concepto, monto, fecha; escribe un PDF en `app/data/facturas/` (directorio con `.gitignore` o creado automáticamente) con:
-      - Encabezado (nombre del negocio, fecha, número de factura correlativo).
-      - Datos del cliente (nombre, cédula/rif).
-      - Concepto/servicio y monto total.
-- [ ] Valores inválidos (monto negativo, nombre vacío, concepto vacío) → `ValueError` con mensaje claro.
-- [ ] Tests unitarios (`tests/test_invoice_service.py`): el PDF se crea y no está vacío (`size > 0`, comienza por `%PDF`), número correlativo incrementa, excepción ante datos inválidos.
+- [x] Añadir `reportlab>=4.0.0` a `requirements.txt` e instalarlo en el venv `/home/nano/Documentos/dev-env` (instalado 5.0.1).
+- [x] `generar_factura(datos: FacturaDatos) -> str`: recibe cliente, cédula/rif, concepto, monto, fecha; escribe un PDF en `app/data/facturas/` (dir gitignored, auto-creado) con:
+      - Encabezado (`NEGOCIO_NOMBRE`, fecha, número de factura correlativo 0001, 0002…).
+      - Datos del cliente (nombre, cédula/rif → "N/A" si vacío).
+      - Concepto/servicio y monto total (`$1,234.50`).
+- [x] Número correlativo persistido en `contador.json` dentro del directorio de salida (sobrevive reinicios).
+- [x] Valores inválidos (monto <= 0 / no numérico, nombre vacío, concepto vacío) → `ValueError` con mensaje claro.
+- [x] Tests unitarios (`tests/test_invoice_service.py`): PDF empieza por `%PDF` y no está vacío, número correlativo incrementa, contador persiste, excepción ante datos inválidos.
 
-**Criterio de aceptación:** `generar_factura` devuelve una ruta válida de PDF; suite verde.
+**Criterio de aceptación:** ✅ `generar_factura` devuelve ruta de PDF válido; suite verde (53 tests).
 
 ---
 

@@ -45,6 +45,13 @@ INVENTORY_CSV_PATH: str = os.getenv(
     os.path.join(_project_root, "app", "data", "inventory.csv")
 )
 
+# --- CONFIGURACIÓN DE FACTURACIÓN (Fase 6) ---
+NEGOCIO_NOMBRE: str = os.getenv("NEGOCIO_NOMBRE", "Mi Negocio")
+FACTURAS_PATH: str = os.getenv(
+    "FACTURAS_PATH",
+    os.path.join(_project_root, "app", "data", "facturas")
+)
+
 
 def validate_credentials() -> bool:
     """Valida que las credenciales de Green-API estén configuradas.
