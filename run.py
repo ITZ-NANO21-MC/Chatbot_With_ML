@@ -8,16 +8,37 @@ inicialización de todos los componentes de la aplicación:
 3. Inicializa el motor del chatbot (ChatbotEngine).
 4. Inicializa el bot de la API de WhatsApp (GreenAPIBot).
 5. Registra los manejadores de mensajes.
-6. Inicia el bot para que escuche eventos de forma continua.
+6. Programa el recordatorio diario (notificaciones programadas).
+7. Inicia el bot para que escuche eventos de forma continua.
 """
+import threading
+
 from whatsapp_chatbot_python import GreenAPIBot
 
 from app import config
 from app.utils.logger import get_logger
 from app.handlers.message_handler import register_handlers
 from app.services.chatbot_engine import ChatbotEngine
+from app.services.scheduled_notifications import enviar_recordatorios_diarios
 
 logger = get_logger(__name__)
+
+INTERVALO_RECORDATORIO_SEGUNDOS = 24 * 60 * 60
+
+
+def _programar_recordatorio(bot: GreenAPIBot) -> None:
+    """Envía los recordatorios y reprograma la siguiente ejecución en 24 h.
+
+    Args:
+        bot (GreenAPIBot): Instancia del bot de Green-API.
+    """
+    threading.Timer(
+        INTERVALO_RECORDATORIO_SEGUNDOS,
+        _programar_recordatorio,
+        args=[bot],
+    ).start()
+    logger.info("Ejecutando recordatorios programados...")
+    enviar_recordatorios_diarios(bot)
 
 
 def main():
@@ -47,7 +68,10 @@ def main():
         register_handlers(bot, engine)
         logger.info("Handlers registrados exitosamente.")
 
-        # 5. Inicio del bot
+        # 5. Programación de recordatorios diarios
+        _programar_recordatorio(bot)
+
+        # 6. Inicio del bot
         logger.info("Bot iniciado. Escuchando mensajes...")
         bot.run_forever()
 

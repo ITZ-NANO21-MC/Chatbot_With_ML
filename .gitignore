@@ -20,3 +20,9 @@ instrucciones_gemini.md
 
 # Ignorar bases de datos SQLite locales (artefactos de ejecución)
 *.db
+
+# Ignorar facturas generadas (artefactos de ejecución, Fase 6)
+app/data/facturas/
+
+# Ignorar registro de clientes (datos personales, Fase 6)
+app/data/clientes.json
