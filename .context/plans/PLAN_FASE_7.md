@@ -7,17 +7,17 @@
 
 ---
 
-## Módulo 7.1 — Reintentos ante errores de la API de WhatsApp
+## Módulo 7.1 — Reintentos ante errores de la API de WhatsApp ✅
 
 **Objetivo:** encapsular un patrón de reintento con backoff para los envíos de salida, de modo que errores transitorios de red (timeouts, conexión, 5xx) no descarten respuestas.
 
 **Tareas:**
-- [ ] `app/utils/retry.py`: helper `con_reintentos(intentos=3, retraso_base=1.0, factor=2.0)` — decorador que reintenta solo sobre excepciones "transitorias" indicadas (por defecto: `ConnectionError`, `TimeoutError`, `OSError`), con backoff exponencial y log de cada intento; relanza la última excepción al agotar intentos.
-- [ ] Aplicarlo en `message_handler.py` alrededor de `notification.answer(...)` y `notification.answer_with_file(...)` (no alrededor de todo el handler: solo el envío, para no reprocesar el mensaje entrante).
-- [ ] Aplicarlo en `scheduled_notifications.py` alrededor de `bot.api.sending.sendMessage(...)` (cada envío, respetando el try/except por cliente existente).
-- [ ] Tests (`tests/test_retry.py`): función que falla N veces y luego tiene éxito → se ejecuta el número correcto de intentos y no lanza excepción; función que siempre falla → relanza tras `intentos`; excepción no transitoria → no se reintenta.
+- [x] `app/utils/retry.py`: `con_reintentos(intentos=3, retraso_base=1.0, factor=2.0, excepciones=...)` — decorador que reintenta solo sobre excepciones "transitorias" indicadas (por defecto: `ConnectionError`, `TimeoutError`, `OSError`), con backoff exponencial y log de cada intento; relanza la última excepción al agotar intentos; rechaza `intentos < 1` con `ValueError`; tolera funciones sin `__name__` (p. ej. mocks).
+- [x] Aplicado en `message_handler.py` alrededor de `notification.answer(...)` y `notification.answer_with_file(...)` (solo el envío, sin reprocesar el mensaje entrante) — también en el mensaje de error de respaldo.
+- [x] Aplicado en `scheduled_notifications.py` alrededor de `bot.api.sending.sendMessage(...)` (cada envío, respetando el try/except por cliente existente).
+- [x] Tests (`tests/test_retry.py`): éxito al primer intento (sin reintento), fallo transitorio → éxito (intentos contados), siempre falla → relanza tras agotar, excepción no transitoria → sin reintento, `intentos < 1` → `ValueError`, backoff exponencial (esperas `[1.0, 2.0, 4.0]`), excepciones personalizadas.
 
-**Criterio de aceptación:** un fallo transitorio en el envío se reintenta automáticamente (con log) y el mensaje se entrega; suite verde.
+**Criterio de aceptación:** ✅ un fallo transitorio en el envío se reintenta automáticamente (con log) y el mensaje se entrega. Suite: 76 tests.
 
 ---
 
