@@ -13,21 +13,31 @@ import pytest
 from app.services import state_manager
 from app.services.message_processor import (
     procesar_mensaje,
+    procesar_mensaje_con_archivo,
+    Respuesta,
     WELCOME_MESSAGE,
     HELP_MESSAGE,
     CONTACTO_MESSAGE,
     HORARIO_MESSAGE,
     STOCK_PROMPT,
     PRECIO_PROMPT,
+    FACTURA_PROMPT_CLIENTE,
+    FACTURA_PROMPT_RIF,
+    FACTURA_PROMPT_CONCEPTO,
+    FACTURA_PROMPT_MONTO,
+    FACTURA_MONTO_INVALIDO,
+    FACTURA_EXITO,
 )
 
 
 @pytest.fixture(autouse=True)
 def limpiar_estados():
-    """Limpia los estados de usuario antes y después de cada prueba."""
+    """Limpia los estados y datos de usuario antes y después de cada prueba."""
     state_manager._user_states.clear()
+    state_manager._user_data.clear()
     yield
     state_manager._user_states.clear()
+    state_manager._user_data.clear()
 
 
 @pytest.fixture
@@ -251,3 +261,82 @@ def test_usuarios_diferentes_tienen_estados_independientes(engine):
 
     assert state_manager.get_state("user_a") == state_manager.STATE_MENU_PRINCIPAL
     assert state_manager.get_state("user_b") is None
+
+
+# =============================================================================
+# Flujo de facturación (/factura)
+# =============================================================================
+
+def test_comando_factura_inicia_flujo(engine):
+    """Comando /factura debe iniciar el flujo de recolección de datos."""
+    respuesta = procesar_mensaje(engine, "user1", "/factura")
+
+    assert respuesta == FACTURA_PROMPT_CLIENTE
+    assert state_manager.get_state("user1") == state_manager.STATE_ESPERANDO_DETALLE_FACTURA
+    assert state_manager.get_datos("user1") == {}
+
+
+@patch("app.services.message_processor.invoice_service.generar_factura")
+def test_flujo_factura_completo_genera_pdf(mock_generar, engine):
+    """El flujo completo de 4 pasos debe generar la factura y adjuntar el PDF."""
+    mock_generar.return_value = "/tmp/facturas/factura_0001.pdf"
+
+    procesar_mensaje(engine, "user1", "/factura")
+    assert procesar_mensaje(engine, "user1", "Ana Perez") == FACTURA_PROMPT_RIF
+    assert procesar_mensaje(engine, "user1", "V-12345678") == FACTURA_PROMPT_CONCEPTO
+    assert procesar_mensaje(engine, "user1", "Soporte mensual") == FACTURA_PROMPT_MONTO
+
+    respuesta = procesar_mensaje_con_archivo(engine, "user1", "120.50")
+
+    assert respuesta == Respuesta(FACTURA_EXITO, archivo="/tmp/facturas/factura_0001.pdf")
+    assert state_manager.get_state("user1") == state_manager.STATE_MENU_PRINCIPAL
+    assert state_manager.get_datos("user1") is None
+
+    mock_generar.assert_called_once()
+    factura = mock_generar.call_args.args[0]
+    assert factura.cliente == "Ana Perez"
+    assert factura.cedula_rif == "V-12345678"
+    assert factura.concepto == "Soporte mensual"
+    assert factura.monto == 120.5
+
+
+@patch("app.services.message_processor.invoice_service.generar_factura")
+def test_flujo_factura_monto_invalido_mantiene_flujo(mock_generar, engine):
+    """Un monto inválido debe pedir reintentar sin perder los datos previos."""
+    mock_generar.return_value = "/tmp/facturas/factura_0001.pdf"
+
+    procesar_mensaje(engine, "user1", "/factura")
+    procesar_mensaje(engine, "user1", "Ana Perez")
+    procesar_mensaje(engine, "user1", "V-12345678")
+    procesar_mensaje(engine, "user1", "Soporte mensual")
+
+    respuesta_error = procesar_mensaje(engine, "user1", "abc")
+
+    assert respuesta_error == FACTURA_MONTO_INVALIDO
+    assert state_manager.get_state("user1") == state_manager.STATE_ESPERANDO_DETALLE_FACTURA
+    assert state_manager.get_datos("user1")["concepto"] == "Soporte mensual"
+
+    respuesta_ok = procesar_mensaje(engine, "user1", "150,5")
+
+    assert respuesta_ok == FACTURA_EXITO
+    mock_generar.assert_called_once()
+    assert mock_generar.call_args.args[0].monto == 150.5
+
+
+@patch("app.services.message_processor.invoice_service.generar_factura")
+def test_flujo_factura_monto_no_positivo_error(mock_generar, engine):
+    """Monto <= 0 debe mostrar mensaje de error generado y cerrar el flujo."""
+    mock_generar.side_effect = ValueError(
+        "El monto debe ser un número mayor que cero."
+    )
+
+    procesar_mensaje(engine, "user1", "/factura")
+    procesar_mensaje(engine, "user1", "Ana Perez")
+    procesar_mensaje(engine, "user1", "V-12345678")
+    procesar_mensaje(engine, "user1", "Soporte mensual")
+
+    respuesta = procesar_mensaje(engine, "user1", "0")
+
+    assert "No se pudo generar la factura" in respuesta
+    assert state_manager.get_state("user1") is None
+    assert state_manager.get_datos("user1") is None

@@ -24,19 +24,19 @@
 
 ---
 
-## Módulo 6.2 — Comando `/factura`
+## Módulo 6.2 — Comando `/factura` ✅
 
 **Objetivo:** el usuario genera una factura desde WhatsApp `/factura` y recibe el PDF.
 
 **Tareas:**
-- [ ] **Decisiones de diseño (resolver al implementar):**
-      - [ ] A) Nueva constante/estado `ESPERANDO_DETALLE_FACTURA` en `state_manager.py` (más 2 entradas de datos: cliente/rif y concepto+monto) — coherente con el flujo de menú actual.
-      - [ ] B) Estructura de la respuesta: `procesar_mensaje` hoy devuelve `str`. Para entregar el PDF, introducir `Respuesta(texto: str, archivo: Optional[str])` y adaptar `message_handler.py` al envío con `answer_with_file`. Evaluar impacto en tests existentes (aseveran `== str`).
-- [ ] `message_processor.py`: reconocer `/factura`, guiar al usuario (cliente → cédula/rif → concepto → monto), invocar `invoice_service.generar_factura`, devolver respuesta con texto + ruta del archivo.
-- [ ] `message_handler.py`: si la respuesta trae `archivo`, `notification.answer_with_file(archivo, file_name="factura.pdf", caption=texto)`; si no, `notification.answer(texto)` como hoy.
-- [ ] Tests: flujo `/factura` completo (4 pasos) genera PDF y devuelve ruta; validación de monto inválido lleva a mensaje de error; handler envía con `answer_with_file` (mock).
+- [x] **Decisiones de diseño (resueltas):**
+      - [x] A) Estado `ESPERANDO_DETALLE_FACTURA` en `state_manager.py` + almacén de datos por usuario (`get_datos`/`set_datos`/`clear_datos`, lock RLock). Flujo de 4 pasos: cliente → cédula/rif → concepto → monto.
+      - [x] B) Respuesta estructurada `Respuesta(texto, archivo)`; `procesar_mensaje` queda como wrapper de texto (compatible hacia atrás) y se expone `procesar_mensaje_con_archivo`. `message_handler.py` envía el archivo con `notification.answer_with_file(...)` o texto con `answer()`.
+- [x] `message_processor.py`: comando `/factura`, prompts `FACTURA_PROMPT_*`, validación de monto (acepta "," como decimal), generación con `invoice_service.generar_factura` y adjunto de la ruta; limpieza de estado/datos al terminar o ante error.
+- [x] `HELP_MESSAGE` actualizado con `/factura`.
+- [x] Tests: inicio del flujo, flujo completo (4 pasos → PDF adjunto), monto inválido mantiene el flujo, monto no positivo cierra con error; handler envía con `answer_with_file` (mock) y tests de datos en `state_manager`.
 
-**Criterio de aceptación:** desde el REPL/WhatsApp, `/factura` + datos produce y envía un PDF con costos correctos.
+**Criterio de aceptación:** ✅ desde el REPL/WhatsApp, `/factura` + datos produce y envía un PDF (verificado localmente: factura_0002.pdf). Suite: 61 tests.
 
 ---
 
