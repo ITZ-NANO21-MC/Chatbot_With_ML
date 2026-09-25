@@ -21,16 +21,17 @@
 
 ---
 
-## Módulo 7.2 — Logs de conversaciones en archivo rotativo
+## Módulo 7.2 — Logs de conversaciones en archivo rotativo ✅
 
 **Objetivo:** sustituir el `FileHandler` estático por `RotatingFileHandler` para que `chatbot_operations.log` no crezca indefinidamente.
 
 **Tareas:**
-- [ ] `config.py`: `LOG_MAX_BYTES` (default `5_242_880`, 5 MB) y `LOG_BACKUP_COUNT` (default `3`) vía entorno.
-- [ ] `app/utils/logger.py`: `RotatingFileHandler(config.LOG_FILE_PATH, maxBytes=LOG_MAX_BYTES, backupCount=LOG_BACKUP_COUNT, encoding="utf-8")` manteniendo `StreamHandler` y el mismo formato. Evitar registros duplicados si el módulo se importa varias veces (guard para handlers ya vinculados).
-- [ ] Tests (`tests/test_logger.py`): los valores de config se parsean correctamente; con `maxBytes` pequeño se rota el archivo y aparece el backup `chatbot_operations.log.1`; el handler no se duplica en el logger raíz al reinicializar.
+- [x] `config.py`: `LOG_MAX_BYTES` (default `5_242_880`, 5 MB) y `LOG_BACKUP_COUNT` (default `3`) vía entorno.
+- [x] `app/utils/logger.py`: refactorizado con `configurar_logging(raiz)` idempotente (no duplica handlers), handler de archivo `RotatingFileHandler` (maxBytes/backupCount/encoding utf-8) + `StreamHandler`; configuración inicial en el import. Los loggers `app.*` (hijos del raíz "app") heredan los handlers.
+- [x] `.env.example` documenta `LOG_MAX_BYTES` y `LOG_BACKUP_COUNT`.
+- [x] Tests (`tests/test_logger.py`): valores de config parseados como enteros válidos; escritura al archivo configurado; rotación por tamaño crea respaldos `.1`/`.2` (maxBytes pequeño); `configurar_logging` no duplica handlers.
 
-**Criterio de aceptación:** el log rota por tamaño creando respaldos numerados; suite verde.
+**Criterio de aceptación:** ✅ el log rota por tamaño creando respaldos numerados (verificado: `demo.log.1`, `demo.log.2`); suite: 80 tests.
 
 ---
 

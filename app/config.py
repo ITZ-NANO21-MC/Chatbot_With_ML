@@ -28,6 +28,9 @@ LOG_FILE_PATH: str = os.getenv(
     "LOG_FILE_PATH",
     os.path.join(_project_root, "chatbot_operations.log")
 )
+# Rotación del log (Fase 7): tamaño máximo por archivo y cantidad de respaldos.
+LOG_MAX_BYTES: int = int(os.getenv("LOG_MAX_BYTES", "5242880"))
+LOG_BACKUP_COUNT: int = int(os.getenv("LOG_BACKUP_COUNT", "3"))
 
 # --- UMBRALES DE CONFIANZA (configurables) ---
 TFIDF_CONFIDENCE_THRESHOLD: float = float(os.getenv("TFIDF_THRESHOLD", "0.3"))
