@@ -40,17 +40,18 @@
 
 ---
 
-## Módulo 6.3 — Job diario de recordatorios/recibos
+## Módulo 6.3 — Job diario de recordatorios/recibos ✅
 
-**Objetivo:** una tarea diaria recuerda/emite recibos a usuarios activos.
+**Objetivo:** el bot envía un recordatorio diario a los clientes registrados, sin intervención del flujo de mensajes entrantes.
 
 **Tareas:**
-- [ ] `app/services/scheduled_notifications.py`: `enviar_recordatorios_diarios(bot)` recorre un registro de chat_ids (fuente pluggable: `app/config.py` → `CLIENTES_PATH`, default `app/data/clientes.json`) y envía un mensaje ─o recibo generado por `invoice_service`─ a cada uno.
-- [ ] Disparador diario en `run.py`: utilizar `threading.Timer` (reloj diario simple, sin dependencias nuevas) o documentar alternativa `APScheduler/schedule` si el cron no basta.
-- [ ] El job se registra tras `register_handlers` y se ejecuta cada 24 h sin bloquear `bot.run_forever()`.
-- [ ] Tests (`tests/test_scheduled_notifications.py`): con `clientes.json` temporal y bot mockeado, `enviar_recordatorios_diarios` llama al envío correcto por cliente; no crashea con lista vacía.
+- [x] **Decisión de diseño:** `scheduled_notifications.enviar_recordatorios_diarios(bot)` envía vía `bot.api.sending.sendMessage(chat_id, mensaje)`; el registro de clientes (`app/data/clientes.json`, **gitignored** por contener números telefónicos) es una lista de `{chat_id, nombre}`. Ruta configurable con `CLIENTES_PATH` (`config.py`).
+- [x] `app/services/scheduled_notifications.py`: carga del registro tolerante a archivos inexistentes / JSON inválido / no-lista; filtra entradas sin `chat_id`; try/except por envío para no interrumpir al resto; devuelve conteo de enviados.
+- [x] Disparador diario en `run.py`: `_programar_recordatorio(bot)` usa `threading.Timer` (reloj diario simple, sin dependencias nuevas) y se reprograma a sí mismo cada 24 h; registrado tras `register_handlers`, no bloquea `bot.run_forever()`.
+- [x] `config.py` (`CLIENTES_PATH`), `.env.example` y `.gitignore` (`app/data/clientes.json`).
+- [x] Tests (`tests/test_scheduled_notifications.py`): envío a todos los clientes, registro vacío/inexistente/corrupto, filtrado de entradas sin `chat_id`, error de envío aislado (no interrumpe al resto) y uso del default de config.
 
-**Criterio de aceptación:** el job envía recordatorios a todos los clientes registrados; destaca bajo tests con mock.
+**Criterio de aceptación:** ✅ el job envía recordatorios a todos los `chat_id` registrados; cubierto con mock del bot (69 tests en suite).
 
 ---
 

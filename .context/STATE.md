@@ -3,9 +3,9 @@
 ## Estado Actual
 
 - **Fase actual:** Fase 6 — Facturación y Mensajes Programados.
-- **Módulo activo:** 6.3 — Job diario de recordatorios/recibos.
-- **Última acción:** Módulo 6.2 completado — `/factura` con estado `ESPERANDO_DETALLE_FACTURA` (4 pasos), respuesta estructurada `Respuesta(texto, archivo)`, envío del PDF con `answer_with_file`, almacén de datos por usuario en `state_manager`. Flujo real verificado (factura_0002.pdf). Suite: **61 passed**.
-- **Siguiente acción:** 6.3 — `scheduled_notifications.py` (recordatorios diarios a clientes registrados), disparador en `run.py` y tests con mock.
+- **Módulo activo:** Cierre de Fase 6 (README, verificación final y merge a `main`).
+- **Última acción:** Módulo 6.3 completado — `scheduled_notifications.py` (recordatorio diario vía `sendMessage`, registro `clientes.json` gitignored configurable con `CLIENTES_PATH`), disparador `threading.Timer` de 24 h en `run.py`, tests con mock. Suite: **69 passed**.
+- **Siguiente acción:** cierre de la Fase 6: sincronizar README y `.context/CONTEXT.md` (nuevos servicios, config, `Respuesta` estructurada), merge de `feat/facturacion` a `main` y push con PR.
 - **Bloqueos:** Ninguno. Entorno de pruebas: venv `/home/nano/Documentos/dev-env` (Python 3.12.3, pytest 9.0.2).
 - **Cambios pendientes sin commitear:** `.context/` (STATE/ROADMAP/plans) — planificación de Fase 6.
 
@@ -15,7 +15,7 @@
 | :-- | :--- | :--- | :--- |
 | 6.1 | Servicio de factura PDF | `reportlab` en requirements; `invoice_service.generar_factura()`: cliente, cédula/rif, concepto, monto, fecha → PDF | ✅ Completado |
 | 6.2 | Comando `/factura` | Estado `ESPERANDO_DETALLE_FACTURA`; guía por 4 pasos; respuesta `Respuesta(texto, archivo)`; envío con `answer_with_file` | ✅ Completado |
-| 6.3 | Job diario de recordatorios | `scheduled_notifications.py`: tarea diaria que recuerda/emite recibos a usuarios activos (registro pluggable de chat_ids) | ⬜ **Siguiente** |
+| 6.3 | Job diario de recordatorios | `scheduled_notifications.py`: recordatorio diario con `threading.Timer` en `run.py`, registro `clientes.json` (gitignored), envía vía `sendMessage` | ✅ Completado |
 
 ## Repositorio
 

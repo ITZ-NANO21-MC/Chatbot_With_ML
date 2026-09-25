@@ -52,6 +52,12 @@ FACTURAS_PATH: str = os.getenv(
     os.path.join(_project_root, "app", "data", "facturas")
 )
 
+# --- CONFIGURACIÓN DE NOTIFICACIONES (Fase 6) ---
+CLIENTES_PATH: str = os.getenv(
+    "CLIENTES_PATH",
+    os.path.join(_project_root, "app", "data", "clientes.json")
+)
+
 
 def validate_credentials() -> bool:
     """Valida que las credenciales de Green-API estén configuradas.
